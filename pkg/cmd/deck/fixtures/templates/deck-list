@@ -1,0 +1,3 @@
+{{- table -}}
+{{- headers "Name" "Due" "Next" -}} {{- range . -}}
+{{- row .Name .Schedule.Due .Schedule.Next -}}{{- end -}}{{- endtable -}}

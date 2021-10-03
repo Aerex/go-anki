@@ -1,0 +1,69 @@
+[
+  {
+    "browserCollapsed": true,
+    "collapsed": false,
+    "conf": 1,
+    "desc": "",
+    "dyn": 0,
+    "extendNew": 10,
+    "extendRev": 50,
+    "id": 1,
+    "lrnToday": [
+      1392,
+      0
+    ],
+    "mid": "1512791750932",
+    "mod": 1530846368,
+    "name": "Default",
+    "newToday": [
+      1392,
+      0
+    ],
+    "revToday": [
+      1392,
+      0
+    ],
+    "timeToday": [
+      1392,
+      0
+    ],
+    "usn": 0,
+    "schedule": {
+      "due": "1",
+      "next": "5"
+    }
+  },
+  {
+    "collapsed": false,
+    "conf": 1,
+    "desc": "",
+    "dyn": 0,
+    "extendNew": 10,
+    "extendRev": 50,
+    "id": 1580686702229,
+    "lrnToday": [
+      1392,
+      0
+    ],
+    "mid": 1512791750932,
+    "mod": 1580686716,
+    "name": "Kanji",
+    "newToday": [
+      1392,
+      0
+    ],
+    "revToday": [
+      1392,
+      0
+    ],
+    "timeToday": [
+      1392,
+      0
+    ],
+    "usn": 0,
+    "schedule": {
+      "due": "5",
+      "next": "2"
+    }
+  }
+]
