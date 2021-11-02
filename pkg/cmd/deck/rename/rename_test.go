@@ -68,12 +68,12 @@ func TestRenameDeckUsingRest(t *testing.T) {
         expectedOut: fmt.Sprintf("Renamed deck to %s", newName),
       },
       {
-        name: "with -q flag",
+        name: "with q flag",
         args: []string{oldName, newName, "-q"},
         expectedOut: "",
       },
       {
-        name: "with --quiet flag",
+        name: "with quiet flag",
         args: []string{oldName, newName, "--quiet"},
         expectedOut: "",
       },
