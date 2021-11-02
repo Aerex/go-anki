@@ -2,6 +2,7 @@ package list
 
 import (
 	"github.com/aerex/anki-cli/pkg/anki"
+	"github.com/aerex/anki-cli/pkg/models"
 	"github.com/aerex/anki-cli/pkg/template"
 	"github.com/spf13/cobra"
 )
@@ -44,17 +45,31 @@ func listCmd(anki *anki.Anki, opts *ListOptions) error {
   if opts.Query != "" {
     query = opts.Query
   }
+
   decks, err := anki.Api.GetDecks(query)
   if err != nil {
     return err
   }
 
-  if err := anki.Templates.Execute(decks, anki.IO); err != nil {
+  studiedStats, err := anki.Api.GetStudiedStats(query)
+  if err != nil {
+    return err
+  }
+
+  data := struct {
+    Data []models.Deck
+    Meta models.CollectionStats
+  }{
+    Data: decks,
+    Meta: studiedStats,
+  }
+
+  if err := anki.Templates.Execute(data, anki.IO); err != nil {
     return err
   }
 
   // TODO: Might need a method to ...
   // Use color or not
-  // Where to print the data (stdout or stream) 
+  // Where to print the data (stdout or stream)
   return nil
 }

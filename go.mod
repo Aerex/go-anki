@@ -21,4 +21,5 @@ require (
 	github.com/stretchr/testify v1.7.0
 	golang.org/x/net v0.0.0-20210917221730-978cfadd31cf // indirect
 	gopkg.in/AlecAivazis/survey.v1 v1.8.8
+	gopkg.in/h2non/gock.v1 v1.1.2 // indirect
 )
