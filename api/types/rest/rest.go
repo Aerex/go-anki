@@ -126,3 +126,26 @@ func (a RestApi) RenameDeck(nameOrId, newName string) (models.Deck, error) {
 
   return models.Deck{}, errors.New("could not rename deck")
 }
+
+func (a RestApi) CreateDeck(name string) (models.Deck, error) {
+  if a.Config.Endpoint != "" {
+    createdDeck := &models.Deck{}
+    errorResponse := &ErrorResponse{}
+    req := a.Client.R()
+    req.SetResult(createdDeck)
+    req.SetBody(models.Deck{Name: name})
+    req.SetError(errorResponse)
+    req.SetPathParam("name", name)
+
+    resp, err := req.Post(DECKS_URI)
+    if err != nil {
+      return models.Deck{}, err
+    }
+    if resp.IsError() {
+      return models.Deck{}, errors.New(errorResponse.Message)
+    }
+    return *createdDeck, nil
+  }
+
+  return models.Deck{}, errors.New("could not create deck")
+}

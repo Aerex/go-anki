@@ -26,6 +26,8 @@ type Api interface {
   GetStudiedStats(qs string) (models.CollectionStats, error)
   // Rename the deck using its ID or name
   RenameDeck(nameOrId string, newName string) (models.Deck, error)
+  // Create a deck
+  CreateDeck(name string) (models.Deck, error)
 }
 
 type ApiConfig struct {
@@ -45,4 +47,3 @@ var ApiConfigs = make(map[string]ApiConfig)
 func Register(apiConfig ApiConfig) {
   ApiConfigs[apiConfig.Type] = apiConfig
 }
-
