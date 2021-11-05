@@ -28,6 +28,8 @@ type Api interface {
   RenameDeck(nameOrId string, newName string) (models.Deck, error)
   // Create a deck
   CreateDeck(name string) (models.Deck, error)
+  // Get a decks (study) options
+  GetDeckOptions(name string) ([]models.DeckOptions, error)
 }
 
 type ApiConfig struct {
