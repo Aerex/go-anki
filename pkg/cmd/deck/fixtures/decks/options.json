@@ -1,0 +1,35 @@
+{
+       "autoplay": true,
+        "dyn" : false,
+        "id" : "1",
+        "lapse" : {
+            "delays": 10
+            "leechAction": 0,
+            "leechFails": 8,
+            "minInt": 1,
+            "mult": 0
+        },
+        "maxTaken" : 60,
+        "mod" : 1530846368,
+        "name" : "",
+        "new" : {
+            "bury" : false,
+            "delays": 110,
+            "initialFactor" : 4
+            "ints" : [1, 4],
+            "order" : 0,
+            "perDay" : 20,
+        },
+        "replayq" : true,
+        "rev" : {
+            "bury" : false,
+            "ease4 : "the number to add to the easyness when the easy button is pressed"
+            fuzz : "The new interval is multiplied by a random number between -fuzz and fuzz"
+            ivlFct : "multiplication factor applied to the intervals Anki generates"
+            maxIvl : "the maximal interval for review"
+            minSpace : "not currently used according to decks.py code's comment"
+            perDay : "Numbers of cards to review per day"
+        }
+        timer : "whether timer should be shown (1) or not (0)"
+        usn : "See usn in cards table for details."
+}
