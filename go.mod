@@ -3,6 +3,7 @@ module github.com/aerex/anki-cli
 go 1.16
 
 require (
+	github.com/MakeNowJust/heredoc v1.0.0 // indirect
 	github.com/Masterminds/goutils v1.1.1 // indirect
 	github.com/Masterminds/semver v1.5.0 // indirect
 	github.com/Masterminds/sprig v2.22.0+incompatible
@@ -22,4 +23,5 @@ require (
 	golang.org/x/net v0.0.0-20210917221730-978cfadd31cf // indirect
 	gopkg.in/AlecAivazis/survey.v1 v1.8.8
 	gopkg.in/h2non/gock.v1 v1.1.2 // indirect
+	gopkg.in/yaml.v2 v2.4.0 // indirect
 )
