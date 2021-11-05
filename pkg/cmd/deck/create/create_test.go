@@ -68,7 +68,7 @@ func TestCreateDeckUsingRest(t *testing.T) {
   expectedUrl := fmt.Sprintf("%s%s", cfg.Endpoint, rest.DECKS_URI)
   err := executeCreateCommand(t, &cfg, &testBufs, args, func() {
     httpmock.RegisterResponder("POST", expectedUrl,
-      httpmock.NewJsonResponderOrPanic(200, httpmock.File("../fixtures/deck.json"),
+      httpmock.NewJsonResponderOrPanic(200, httpmock.File("../fixtures/decks/deck.json"),
       ))})
   defer httpmock.DeactivateAndReset()
   if err != nil {

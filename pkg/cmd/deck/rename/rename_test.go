@@ -91,7 +91,7 @@ func TestRenameDeckUsingRest(t *testing.T) {
       expectedUrl := fmt.Sprintf("%s%s/%s", cfg.Endpoint, rest.DECKS_URI, oldName)
       err := executeRenameCommand(t, &cfg, &testBufs, variation.args, func() {
         httpmock.RegisterResponder("PATCH", expectedUrl,
-          httpmock.NewJsonResponderOrPanic(200, httpmock.File("../fixtures/deck.json"),
+          httpmock.NewJsonResponderOrPanic(200, httpmock.File("../fixtures/decks/updated_deck.json"),
           ))})
       defer httpmock.DeactivateAndReset()
       if err != nil {
@@ -129,7 +129,7 @@ func TestRenameInvalidDeckUsingRest(t *testing.T) {
   executeRenameCommand(t, &cfg, &testBufs, []string{oldName, newName}, func() {
     httpmock.RegisterResponder("PATCH", url,
     httpmock.NewJsonResponderOrPanic(404,
-        httpmock.File("../fixtures/deck_not_found_error.json"),
+        httpmock.File("../fixtures/decks/not_found.json"),
   ))})
   defer httpmock.DeactivateAndReset()
 

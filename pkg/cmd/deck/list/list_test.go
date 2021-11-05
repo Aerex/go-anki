@@ -70,11 +70,11 @@ func TestDefaultListUsingRestCmd(t *testing.T) {
   // Run command
   err := executeListCommand(t, &cfg, &testBufs, []string{}, func() {
       httpmock.RegisterResponder("GET", cfg.Endpoint +  rest.DECKS_URI,
-        httpmock.NewJsonResponderOrPanic(200, httpmock.File("../fixtures/decks.json"),
+        httpmock.NewJsonResponderOrPanic(200, httpmock.File("../fixtures/decks/decks.json"),
       ))
       httpmock.RegisterResponderWithQuery("GET", cfg.Endpoint +  rest.COLLECTION_URI,
         url.Values{"include": []string{"meta"}},
-        httpmock.NewJsonResponderOrPanic(200, httpmock.File("../fixtures/collection_meta.json"),
+        httpmock.NewJsonResponderOrPanic(200, httpmock.File("../fixtures/collection/meta.json"),
       ))
   })
   defer httpmock.DeactivateAndReset()
@@ -120,11 +120,11 @@ func TestExactMatchFilterDecksRestCmd(t *testing.T) {
   err := executeListCommand(t, &cfg, &testBufs, args, func() {
     httpmock.RegisterResponderWithQuery("GET", cfg.Endpoint + rest.DECKS_URI,
       url.Values{"query": []string{expectedQuery}},
-      httpmock.NewJsonResponderOrPanic(200, httpmock.File("../fixtures/deck_only_one.json"),
+      httpmock.NewJsonResponderOrPanic(200, httpmock.File("../fixtures/decks/single_deck.json"),
       ))
     httpmock.RegisterResponderWithQuery("GET", cfg.Endpoint +  rest.COLLECTION_URI,
       url.Values{"include": []string{"meta"}, "query": []string{expectedQuery}},
-      httpmock.NewJsonResponderOrPanic(200, httpmock.File("../fixtures/collection_meta.json"),
+      httpmock.NewJsonResponderOrPanic(200, httpmock.File("../fixtures/collection/meta.json"),
       ))
   })
   defer httpmock.DeactivateAndReset()
