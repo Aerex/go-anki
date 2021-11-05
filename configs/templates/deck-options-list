@@ -1,0 +1,4 @@
+{{- range .Data }}
+{{ . | toYaml }}
+{{ if len .Data gt 1 }} -- {{ end }}
+{{ end }}
