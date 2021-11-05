@@ -68,8 +68,5 @@ func listCmd(anki *anki.Anki, opts *ListOptions) error {
     return err
   }
 
-  // TODO: Might need a method to ...
-  // Use color or not
-  // Where to print the data (stdout or stream)
   return nil
 }

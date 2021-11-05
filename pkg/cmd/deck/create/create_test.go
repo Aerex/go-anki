@@ -55,8 +55,7 @@ func TestCreateDeckUsingRest(t *testing.T) {
     fmt.Println(err)
     os.Exit(1)
   }
-  var testBufs helpers.TestCmdBuffers
-  testBufs = helpers.TestCmdBuffers{
+  testBufs := helpers.TestCmdBuffers{
     InBuf: &bytes.Buffer{},
     OutBuf: &bytes.Buffer{},
     ErrBuf : &bytes.Buffer{},
