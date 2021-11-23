@@ -2,6 +2,58 @@ package models
 
 import "github.com/aerex/anki-cli/api/types"
 
+// structure for cards
+type Card struct {
+	Id       types.UnixTime `json:"id"`
+	Nid      types.UnixTime `json:"nid"`
+	Did      types.UnixTime `json:"did"`
+	Ord      int            `json:"ord"`
+	Mod      types.UnixTime
+	Usn      int `json:"usn"`
+	Type     int
+	Queue    int
+	Due      types.UnixTime
+	Ivl      int `json:"lvl"`
+	Factor   int `json:"factor"`
+	Reps     int `json:"reps"`
+	Lapses   int `json:"lapses"`
+	Left     int `json:"left"`
+	Odue     int
+	Flags    int
+	Question string `json:"question"`
+	Answer   string `json:"answer"`
+
+	IsEmpty bool `json:"isEmpty"`
+	Name    string
+	Note    struct {
+		Fields []string
+		Flags  int
+		Guid   string
+		Id     types.UnixTime
+		Mid    types.UnixTime
+		Mod    types.UnixTime
+		// model describes the note type
+		Model struct {
+			Css  string
+			Name string
+			Did  types.UnixTime
+			Flds []struct {
+				Font   string
+				Media  []string
+				Name   string
+				Ord    int
+				Size   int
+				Sticky bool
+			} `json:"flds"`
+		}
+		LatexPost string
+		LatexPre  string `json:"latexPost,omitempty"`
+	} `json:"note"`
+	Deck struct {
+		Name string `json:"name"`
+	} `json:"deck"`
+}
+
 // Structure for schedule
 type DeckSchedule struct {
 	// The number of cards due for a given deck
@@ -83,7 +135,7 @@ const (
 
 // structure for deck options
 // See https://github.com/ankidroid/Anki-Android/wiki/Database-Structure#dconf-jsonobjects
-type DeckOptions struct {
+type DeckConfig struct {
 	// Whether the audio associated to a question should be
 	Autoplay bool `json:"autoplay"`
 	// Whether this deck is dynamic. Not present by default in decks.py
