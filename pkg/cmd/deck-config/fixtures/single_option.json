@@ -1,0 +1,41 @@
+{
+  "autoplay": true,
+  "dyn": false,
+  "deckId": 1,
+  "lapse": {
+    "delays": [
+      10
+    ],
+    "leechAction": 0,
+    "leechFails": 8,
+    "minInterval": 1,
+    "mult": 0
+  },
+  "maxTaken": 60,
+  "mod": 1530846368,
+  "name": "Default",
+  "new": {
+    "bury": false,
+    "delays": [
+      1,
+      10
+    ],
+    "initialFactor": 4,
+    "learningDelays": [
+      1,
+      4
+    ],
+    "order": 0,
+    "perDay": 20
+  },
+  "replayq": true,
+  "rev": {
+    "bury": false,
+    "ease4": 130,
+    "ivlFct": 100,
+    "maxInterval": 36500,
+    "perDay": 20
+  },
+  "timer": false,
+  "usn": 0
+}
