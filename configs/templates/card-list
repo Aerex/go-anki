@@ -1,0 +1,5 @@
+{{- table }}
+{{- headers "Question" "Answer" -}}{{ range .Data }}
+{{- row .Question .Answer -}}
+{{ end -}}
+{{ endtable -}}

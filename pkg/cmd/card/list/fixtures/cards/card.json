@@ -1,0 +1,98 @@
+[
+  {
+    "answer": "A2",
+    "css": "<style>.card {\n font-family: arial;\n font-size: 20px;\n text-align: center;\n color: black;\n background-color: white;\n}</style>",
+    "did": 1512971773018,
+    "deck": {
+      "name": "Basic"
+    },
+    "due": 1637633499743,
+    "factor": 2050,
+    "id": 1548020328454,
+    "isEmpty": null,
+    "ivl": 95,
+    "lapses": 0,
+    "left": 2002,
+    "mod": 1631385158,
+    "nid": 1548020259445,
+    "note": {
+      "fields": [
+        "A2b - Front",
+        "A2b - Back"
+      ],
+      "flags": 0,
+      "guid": "_`d?8",
+      "id": 1548020259445,
+      "mid": 1512870390215,
+      "mod": 1548020328,
+      "model": {
+        "css": ".card {\n font-family: arial;\n font-size: 20px;\n text-align: center;\n color: black;\n background-color: white;\n}",
+        "did": 1513458184142,
+        "flds": [
+          {
+            "font": "Nimbus Sans",
+            "media": [],
+            "name": "Front",
+            "ord": 0,
+            "rtl": false,
+            "size": 20,
+            "sticky": false
+          },
+          {
+            "font": "Arial",
+            "media": [],
+            "name": "Back",
+            "ord": 1,
+            "rtl": false,
+            "size": 20,
+            "sticky": false
+          }
+        ],
+        "id": 1512870390215,
+        "latexPost": "\\end{document}",
+        "latextPre": null,
+        "mod": 1593364053,
+        "name": "Basic with sentences",
+        "req": [
+          [
+            0,
+            "any",
+            [
+              0
+            ]
+          ]
+        ],
+        "sortf": 0,
+        "tmpls": [
+          {
+            "afmt": "{{FrontSide}}\n\n<hr id=answer>\n\n{{Back}}",
+            "bafmt": "",
+            "bfont": "Arial",
+            "bqfmt": "",
+            "bsize": 12,
+            "did": null,
+            "name": "Card 1",
+            "ord": 0,
+            "qfmt": "{{Front}}"
+          }
+        ],
+        "type": 0,
+        "usn": 0,
+        "vers": []
+      },
+      "scm": 1635475381749,
+      "string_tags": "",
+      "tags": [],
+      "usn": 202
+    },
+    "odid": 0,
+    "odue": 0,
+    "ord": 0,
+    "question": "Q2",
+    "queue": 2,
+    "reps": 4,
+    "timerStarted": null,
+    "type": 2,
+    "usn": 518
+  }
+]
