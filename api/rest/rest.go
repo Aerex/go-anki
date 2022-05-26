@@ -4,18 +4,23 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strconv"
 
 	"github.com/aerex/anki-cli/api"
 	"github.com/aerex/anki-cli/internal/config"
 	"github.com/aerex/anki-cli/pkg/models"
 	"github.com/go-resty/resty/v2"
+	"github.com/op/go-logging"
 )
 
 const (
 	DECKS_URI        = "/decks"
 	COLLECTION_URI   = "/collections"
-	DECK_OPTIONS_URI = "/deckOptions"
+	DECK_CONFIGS_URI = "/deckOptions"
+	CARDS_URI        = "/cards"
 )
+
+var logger = logging.MustGetLogger("ankicli")
 
 // Structure for generic data
 type DataWithMeta struct {
@@ -81,7 +86,7 @@ func (a RestApi) GetDecks(qs string) ([]models.Deck, error) {
 	}
 	// TODO: Need to move this to an error module or something
 	// Same thing on line 66
-	return []models.Deck{}, errors.New("could not get decks using ")
+	return []models.Deck{}, errors.New("could not get decks")
 }
 
 func (a RestApi) GetClient() *http.Client {
@@ -136,6 +141,7 @@ func (a RestApi) CreateDeck(name string) (models.Deck, error) {
 		req.SetResult(createdDeck)
 		req.SetBody(models.Deck{Name: name})
 		req.SetError(errorResponse)
+		// FIXME: Should not be using a path param in a post here
 		req.SetPathParam("name", name)
 
 		resp, err := req.Post(DECKS_URI)
@@ -150,26 +156,105 @@ func (a RestApi) CreateDeck(name string) (models.Deck, error) {
 
 	return models.Deck{}, errors.New("could not create deck")
 }
-func (a RestApi) GetDeckOptions(nameOrId string) ([]models.DeckOptions, error) {
+
+func (a RestApi) GetAllDeckConfigs() ([]models.DeckConfig, error) {
+
+	return []models.DeckConfig{}, errors.New("could not get all deck config")
+}
+
+func (a RestApi) GetDeckConfig(nameOrId string) (models.DeckConfig, error) {
 	if a.Config.Endpoint != "" {
-		deckOptions := &[]models.DeckOptions{}
+		deckOptions := &models.DeckConfig{}
 		errorResponse := &ErrorResponse{}
 		req := a.Client.R()
 		req.SetResult(deckOptions)
 		req.SetError(errorResponse)
-		if nameOrId != "" {
-			req.SetPathParam("nameOrId", nameOrId)
-		}
+		req.SetPathParam("nameOrId", nameOrId)
 
-		resp, err := req.Get(fmt.Sprintf("%s/{nameOrId}", DECK_OPTIONS_URI))
+		resp, err := req.Get(fmt.Sprintf("%s/{nameOrId}", DECK_CONFIGS_URI))
 		if err != nil {
-			return []models.DeckOptions{}, err
+			return models.DeckConfig{}, err
 		}
 		if resp.IsError() {
-			return []models.DeckOptions{}, errors.New(errorResponse.Message)
+			return models.DeckConfig{}, errors.New(errorResponse.Message)
 		}
 		return *deckOptions, nil
 	}
 
-	return []models.DeckOptions{}, errors.New("could not get deck options")
+	return models.DeckConfig{}, errors.New("could not get deck configs")
+}
+
+func (a RestApi) UpdateDeckConfig(deckConfig models.DeckConfig, id string) (models.DeckConfig, error) {
+	if a.Config.Endpoint != "" {
+		updatedDeckConfig := &models.DeckConfig{}
+		errorResponse := &ErrorResponse{}
+		req := a.Client.R()
+		req.SetResult(updatedDeckConfig)
+		req.SetBody(deckConfig)
+		req.SetError(errorResponse)
+		req.SetPathParam("id", id)
+
+		resp, err := req.Patch(fmt.Sprintf("%s%s", DECK_CONFIGS_URI, id))
+		if err != nil {
+			return models.DeckConfig{}, err
+		}
+		if resp.IsError() {
+			return models.DeckConfig{}, errors.New(errorResponse.Message)
+		}
+		return *updatedDeckConfig, nil
+	}
+
+	return models.DeckConfig{}, errors.New("could not update deck config")
+}
+
+func (a RestApi) GetCards(qs string, limit int) ([]models.Card, error) {
+	if a.Config.Endpoint != "" {
+		cards := &[]models.Card{}
+		req := a.Client.R()
+		req.SetResult(cards)
+		if qs != "" {
+			req.SetQueryParam("query", qs)
+		}
+		if limit != -1 {
+			req.SetQueryParam("limit", strconv.Itoa(limit))
+		}
+		resp, err := req.Get(CARDS_URI)
+		if err != nil || resp.IsError() {
+			return []models.Card{}, err
+		}
+		return *cards, nil
+	}
+	return []models.Card{}, errors.New("could not get cards")
+}
+
+func (a RestApi) CreateCard(card models.Card) (models.Card, error) {
+	if a.Config.Endpoint != "" {
+		createdCard := &models.Card{}
+		req := a.Client.R()
+		req.SetResult(createdCard)
+		req.SetBody(&card)
+		_, err := req.Post(fmt.Sprintf("%s/%s/cards", DECKS_URI, card.Deck.Name))
+		if err != nil {
+			return models.Card{}, err
+		}
+		return *createdCard, nil
+	}
+	return models.Card{}, errors.New("could not create card")
+}
+
+func (a RestApi) GetModels(name string) ([]models.CardModel, error) {
+	if a.Config.Endpoint != "" {
+		mdls := &[]models.CardModel{}
+		req := a.Client.R()
+		req.SetResult(mdls)
+		if name != "" {
+			req.SetQueryParam("name", name)
+		}
+		resp, err := req.Get(fmt.Sprintf("%s/models", COLLECTION_URI))
+		if err != nil || resp.IsError() {
+			return []models.CardModel{}, err
+		}
+		return *mdls, nil
+	}
+	return []models.CardModel{}, errors.New("could not find card model")
 }
