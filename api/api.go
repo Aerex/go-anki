@@ -31,7 +31,7 @@ type Api interface {
 	// Create a deck
 	CreateDeck(name string) (models.Deck, error)
 	// Get multiple cards
-	GetCards(qs string) ([]models.Card, error)
+	GetCards(qs string, limit int) ([]models.Card, error)
 	// Get a deck study option
 	GetDeckConfig(name string) (models.DeckConfig, error)
 	// Get multiple deck study options
