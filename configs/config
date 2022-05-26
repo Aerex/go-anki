@@ -1,8 +1,8 @@
 type: REST
 endpoint: https://api.anki.com
-auth_method: CUSTOM
 user: aerex 
-pass-eval: pass ankicli
+editor: nvim
+passEval: pass ankicli
 logger:
   level: DEBUG
   file: /tmp/anki-cli.log
