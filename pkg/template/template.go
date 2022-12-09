@@ -5,30 +5,37 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
 	"text/template"
 
 	"github.com/Masterminds/sprig"
-	"github.com/aerex/anki-cli/internal/config"
-	"github.com/aerex/anki-cli/pkg/io"
+	"github.com/aerex/go-anki/internal/config"
+	"github.com/aerex/go-anki/pkg/io"
 	"gopkg.in/AlecAivazis/survey.v1"
 	"gopkg.in/yaml.v2"
 )
 
+// TODO: Rename template names that make sense
+// Don't do deck-list use list-deck
 const (
-	DECK_LIST = "deck-list"
-  DECK_SINGLE_OPTION_LIST = "deck-option-list"
-  MULTIPLE_OPTIONS_LIST = "deck-options-list"
+	LIST_DECK               = "list-deck"
+	DECK_SINGLE_OPTION_LIST = "deck-option-list"
+	MULTIPLE_OPTIONS_LIST   = "deck-options-list"
+	CARD_LIST               = "card-list"
+	CREATE_CARD             = "create-card"
+	LIST_CARD_TYPES         = "list-card-types"
 )
 
 type Template interface {
 	Load(string) error
 	Execute(interface{}, *io.IO) error
 	GetTemplateFile(pathname string) (string, error)
+	LoadedTemplate() *template.Template
 }
 
 type AnkiTemplate struct {
 	Config         *config.Config
-	LoadedTemplate *template.Template
+	loadedTemplate *template.Template
 	data           string
 }
 
@@ -36,6 +43,16 @@ func NewTemplate(config *config.Config) Template {
 	return &AnkiTemplate{
 		Config: config,
 	}
+}
+func LoadString(tmpl string, config *config.Config, renderType string) (*template.Template, error) {
+	t, err := template.New("ankicli").Funcs(sprig.GenericFuncMap()).
+		Funcs(CustomFuncMaps()).
+		Funcs(FieldReplacementMap(config, renderType)).
+		Parse(tmpl)
+	if err != nil {
+		return nil, nil
+	}
+	return t, nil
 }
 
 // Return the full path of the sample template directory
@@ -49,7 +66,11 @@ func GetSampleTemplateFilePath(fileName string) string {
 // Attempt to read from absolute path otherwise retrieve from
 // User's templates config directory (ie $HOME/.config/templates)
 func (t *AnkiTemplate) GetTemplateFile(pathname string) (string, error) {
-	templateConfigFilePath := filepath.Join(t.Config.Dir, "templates", pathname)
+	// TODO: Might want to either pass in filename as arg
+	paths := strings.Split(pathname, "/")
+	fileName := paths[len(paths)-1]
+
+	templateConfigFilePath := filepath.Join(t.Config.Dir, "templates", fileName)
 	var filePath string
 	if _, err := os.Stat(pathname); os.IsNotExist(err) {
 		// Check to see if the file exists in the template config dir
@@ -91,11 +112,15 @@ func (t *AnkiTemplate) Load(pathname string) error {
 				if err != nil {
 					return err
 				}
+			} else {
+				// NOTE: This is fine but there should a better output message we can return
+				// or use no error
+				return fmt.Errorf("there was a problem loading the template file %v", pathname)
 			}
 		}
 
 		// Load template engine with useful template functions
-		t.LoadedTemplate = template.New("ankicli").Funcs(sprig.GenericFuncMap())
+		t.loadedTemplate = template.New("ankicli").Funcs(sprig.GenericFuncMap())
 		t.data = data
 		return nil
 	}
@@ -103,8 +128,8 @@ func (t *AnkiTemplate) Load(pathname string) error {
 }
 
 func (t *AnkiTemplate) Execute(data interface{}, io *io.IO) error {
-	if t.LoadedTemplate != nil {
-		tmpl, err := t.LoadedTemplate.Funcs(TableFuncMap(io)).Funcs(CustomFuncMaps()).Parse(t.data)
+	if t.loadedTemplate != nil {
+		tmpl, err := t.loadedTemplate.Funcs(TableFuncMap(io)).Funcs(CustomFuncMaps()).Parse(t.data)
 		if err != nil {
 			return err
 		}
@@ -114,6 +139,10 @@ func (t *AnkiTemplate) Execute(data interface{}, io *io.IO) error {
 		}
 	}
 	return nil
+}
+
+func (t *AnkiTemplate) LoadedTemplate() *template.Template {
+	return t.loadedTemplate
 }
 
 func CustomFuncMaps() map[string]interface{} {
