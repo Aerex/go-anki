@@ -17,8 +17,8 @@
     "nid": 1548020259445,
     "note": {
       "fields": [
-        "A2b - Front",
-        "A2b - Back"
+        ["Front", "A2b"],
+        ["Back", "A2b"]
       ],
       "flags": 0,
       "guid": "_`d?8",
@@ -26,6 +26,7 @@
       "mid": 1512870390215,
       "mod": 1548020328,
       "model": {
+        "tags": [],
         "css": ".card {\n font-family: arial;\n font-size: 20px;\n text-align: center;\n color: black;\n background-color: white;\n}",
         "did": 1513458184142,
         "flds": [
@@ -54,18 +55,17 @@
         "mod": 1593364053,
         "name": "Basic with sentences",
         "req": [
+          0,
+          "any",
           [
-            0,
-            "any",
-            [
-              0
-            ]
+            0
           ]
+
         ],
         "sortf": 0,
         "tmpls": [
           {
-            "afmt": "{{FrontSide}}\n\n<hr id=answer>\n\n{{Back}}",
+            "afmt": "{{Front}}\n\n<hr id=answer>\n\n{{Back}}",
             "bafmt": "",
             "bfont": "Arial",
             "bqfmt": "",

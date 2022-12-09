@@ -4,19 +4,19 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/aerex/anki-cli/api"
-	"github.com/aerex/anki-cli/internal/config"
-	"github.com/aerex/anki-cli/internal/logger"
-	"github.com/aerex/anki-cli/pkg/anki"
-	"github.com/aerex/anki-cli/pkg/io"
-	"github.com/aerex/anki-cli/pkg/root"
-	"github.com/aerex/anki-cli/pkg/template"
+	"github.com/aerex/go-anki/api"
+	"github.com/aerex/go-anki/internal/config"
+	"github.com/aerex/go-anki/internal/logger"
+	"github.com/aerex/go-anki/pkg/anki"
+	"github.com/aerex/go-anki/pkg/io"
+	"github.com/aerex/go-anki/pkg/root"
+	"github.com/aerex/go-anki/pkg/template"
 	"github.com/op/go-logging"
 	"github.com/spf13/viper"
 	"gopkg.in/AlecAivazis/survey.v1"
 
 	// Preload all api types
-	_ "github.com/aerex/anki-cli/api/types"
+	_ "github.com/aerex/go-anki/api/types"
 )
 
 func main() {

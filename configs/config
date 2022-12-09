@@ -1,4 +1,7 @@
-type: REST
+type: db
+db: 
+  driver: sqlite3
+  storage_path: ~/.anki/User 1/
 endpoint: https://api.anki.com
 user: aerex 
 editor: nvim

@@ -8,14 +8,14 @@ import (
 	"os"
 	"testing"
 
-	"github.com/aerex/anki-cli/api"
-	"github.com/aerex/anki-cli/api/types/rest"
-	"github.com/aerex/anki-cli/internal/config"
-	"github.com/aerex/anki-cli/pkg/anki"
-	"github.com/aerex/anki-cli/pkg/io"
-	"github.com/aerex/anki-cli/pkg/models"
-	"github.com/aerex/anki-cli/pkg/template"
-	helpers "github.com/aerex/anki-cli/tests"
+	"github.com/aerex/go-anki/api"
+	"github.com/aerex/go-anki/api/rest"
+	"github.com/aerex/go-anki/internal/config"
+	"github.com/aerex/go-anki/pkg/anki"
+	"github.com/aerex/go-anki/pkg/io"
+	"github.com/aerex/go-anki/pkg/models"
+	"github.com/aerex/go-anki/pkg/template"
+	helpers "github.com/aerex/go-anki/tests"
 	"github.com/jarcoal/httpmock"
 	"github.com/stretchr/testify/assert"
 	"gopkg.in/yaml.v2"
@@ -48,7 +48,7 @@ func executeDeckConfigsCommand(t *testing.T, cfg *config.Config, buffers *helper
 	anki := &anki.Anki{
 		Api:       api.NewApi(cfg),
 		Config:    cfg,
-		IO:        io.NewTestIO(buffers.InBuf, buffers.OutBuf, buffers.ErrBuf),
+		IO:        io.NewTestIO(buffers.InBuf, buffers.OutBuf, buffers.ErrBuf, nil),
 		Templates: template.NewTemplate(cfg),
 	}
 

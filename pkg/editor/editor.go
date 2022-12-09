@@ -10,8 +10,8 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/aerex/anki-cli/pkg/anki"
-	"github.com/aerex/anki-cli/pkg/io"
+	"github.com/aerex/go-anki/pkg/anki"
+	"github.com/aerex/go-anki/pkg/io"
 	"github.com/spf13/viper"
 	"gopkg.in/AlecAivazis/survey.v1"
 	"gopkg.in/yaml.v2"

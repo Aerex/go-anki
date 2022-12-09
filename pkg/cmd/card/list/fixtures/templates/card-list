@@ -1,5 +1,5 @@
 {{- table -}}
 {{- headers "Question" "Answer" "Card Type" "Deck" "Due Date" -}} {{ range .Data -}}
-{{- row .Question .Answer .Note.Model.Name .Deck.Name (.Due | date "2006-01-02") -}}
+{{- row .Question .Answer .CardType .Deck (.Due | date "2006-01-02") -}}
 {{ end -}}
 {{ endtable -}}

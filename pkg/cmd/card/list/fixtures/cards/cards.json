@@ -6,7 +6,7 @@
     "deck": {
       "name": "Default"
     },
-    "due": 1637633499743,
+    "due": 1637539200,
     "factor": 1300,
     "id": 1520384669435,
     "isEmpty": null,
@@ -17,8 +17,8 @@
     "nid": 1520384591999,
     "note": {
       "fields": [
-        "A1a - Front",
-        "A1b - Back"
+        ["Front", "A1a"],
+        ["Back", "A1b"]
       ],
       "flags": 0,
       "guid": "cF/#K",
@@ -26,6 +26,9 @@
       "mid": 1512870390215,
       "mod": 1520384843,
       "model": {
+        "tags": [
+          "adjectives"
+        ],
         "css": ".card {\n font-family: arial;\n font-size: 20px;\n text-align: center;\n color: black;\n background-color: white;\n}",
         "did": 1513458184142,
         "flds": [
@@ -54,18 +57,17 @@
         "mod": 1593364053,
         "name": "Basic with sentences",
         "req": [
-          [
             0,
             "any",
             [
               0
             ]
-          ]
+          
         ],
         "sortf": 0,
         "tmpls": [
           {
-            "afmt": "{{FrontSide}}\n\n<hr id=answer>\n\n{{Back}}",
+            "afmt": "{{Back}}",
             "bafmt": "",
             "bfont": "Arial",
             "bqfmt": "",
@@ -104,7 +106,7 @@
     "deck": {
       "name": "Basic"
     },
-    "due": 1637633499743,
+    "due": 1637539200,
     "factor": 2050,
     "id": 1548020328454,
     "isEmpty": null,
@@ -115,8 +117,8 @@
     "nid": 1548020259445,
     "note": {
       "fields": [
-        "A2b - Front",
-        "A2b - Back"
+        ["Front", "A2a"],
+        ["Back", "A2b"]
       ],
       "flags": 0,
       "guid": "_`d?8",
@@ -124,6 +126,7 @@
       "mid": 1512870390215,
       "mod": 1548020328,
       "model": {
+        "tags": [],
         "css": ".card {\n font-family: arial;\n font-size: 20px;\n text-align: center;\n color: black;\n background-color: white;\n}",
         "did": 1513458184142,
         "flds": [
@@ -163,7 +166,7 @@
         "sortf": 0,
         "tmpls": [
           {
-            "afmt": "{{FrontSide}}\n\n<hr id=answer>\n\n{{Back}}",
+            "afmt": "{{Back}}",
             "bafmt": "",
             "bfont": "Arial",
             "bqfmt": "",

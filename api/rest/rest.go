@@ -6,9 +6,8 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/aerex/anki-cli/api"
-	"github.com/aerex/anki-cli/internal/config"
-	"github.com/aerex/anki-cli/pkg/models"
+	"github.com/aerex/go-anki/api"
+	"github.com/aerex/go-anki/internal/config"
 	"github.com/go-resty/resty/v2"
 	"github.com/op/go-logging"
 )

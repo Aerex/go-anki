@@ -8,9 +8,9 @@ import (
 	"runtime"
 
 	"github.com/MakeNowJust/heredoc"
-	"github.com/aerex/anki-cli/pkg/anki"
-	"github.com/aerex/anki-cli/pkg/models"
-	"github.com/aerex/anki-cli/pkg/template"
+	"github.com/aerex/go-anki/pkg/anki"
+	"github.com/aerex/go-anki/pkg/models"
+	"github.com/aerex/go-anki/pkg/template"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"gopkg.in/yaml.v2"

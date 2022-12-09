@@ -1,5 +1,6 @@
-{{- table }}
-{{- headers "Question" "Answer" -}}{{ range .Data }}
-{{- row .Question .Answer -}}
-{{ end -}}
-{{ endtable -}}
+{{/* table template */ -}}
+{{- table -}}
+{{- styles "autoMergeCells" "centerSep=*" "colSep=|" "rowSep=-" -}}
+{{- styles "headerAlignment=center" "autoWrapText" -}}
+{{- headers "Question" "Answer" -}} {{ range .Data -}}
+{{- row .Question .Answer -}}{{ end -}}{{ endtable -}}
