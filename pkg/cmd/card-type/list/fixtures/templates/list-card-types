@@ -1,0 +1,11 @@
+{{/* list card types templates */}}
+{{- range .Data }} 
+{{ .Name  }}: {{ range .Templates }}
+  Name: {{ .Name }}
+  Front Template: |-
+
+    {{ .QuestionFormat }}
+
+  Back Template: |-
+
+    {{ printf "%s" .AnswerFormat }}{{ end }}{{ end }}

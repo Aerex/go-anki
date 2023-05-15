@@ -1,0 +1,9 @@
+Basic: 
+  Name: Card 1
+  Front Template: |-
+
+    {{Front}}
+
+  Back Template: |-
+
+    {{FrontSide}}\n\n<hr id=answer>\n\n{{Back}} 

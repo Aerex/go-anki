@@ -1,0 +1,8 @@
+{{/* create card template */ -}}
+fields: {{ range .Fields }}
+  # {{ .Name }}
+  -  |- {{ end }}
+
+tags:
+
+

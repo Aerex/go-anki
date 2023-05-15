@@ -1,0 +1,55 @@
+[
+  {
+    "css": ".card {\n font-family: arial;\n font-size: 20px;\n text-align: center;\n color: black;\n background-color: white;\n}\n",
+    "did": 1512971106884,
+    "flds": [
+      {
+        "font": "Arial",
+        "media": [],
+        "name": "Front",
+        "ord": 0,
+        "rtl": false,
+        "size": 20,
+        "sticky": false
+      },
+      {
+        "font": "Arial",
+        "media": [],
+        "name": "Back",
+        "ord": 1,
+        "rtl": false,
+        "size": 20,
+        "sticky": false
+      }
+    ],
+    "id": "1512791750933",
+    "latexPost": "\\end{document}",
+    "latextPre": null,
+    "mod": 1646363285,
+    "name": "Basic",
+    "req": [
+    [
+      0,
+      "any",
+      [
+        0
+      ]
+    ]
+  ],
+  "sortf": 0,
+  "tmpls": [
+    {
+      "afmt": "{{FrontSide}}\n\n<hr id=answer>\n\n{{Back}} ",
+      "bafmt": "",
+      "bqfmt": "",
+      "did": null,
+      "name": "Card 1",
+      "ord": 0,
+      "qfmt": "{{Front}}"
+    }
+  ],
+  "type": 0,
+  "usn": 576,
+  "vers": []
+  }
+]

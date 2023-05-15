@@ -1,0 +1,224 @@
+[
+  {
+    "css": ".card {\n font-family: NotoSansJP;\n font-size: 24px;\n text-align: center;\n color: black;\n background-color: white;\n word-wrap: break-word;\n}\n\n\n.big { font-size: 36px; }\n.small { font-size: 18px;}\n",
+    "did": 1590256025517,
+    "flds": [
+      {
+        "font": "Nimbus Sans [UKWN]",
+        "media": [],
+        "name": "Expression",
+        "ord": 0,
+        "rtl": false,
+        "size": 20,
+        "sticky": false
+      },
+      {
+        "font": "Nimbus Sans [UKWN]",
+        "media": [],
+        "name": "Reading",
+        "ord": 1,
+        "rtl": false,
+        "size": 20,
+        "sticky": false
+      },
+      {
+        "font": "Nimbus Sans [UKWN]",
+        "media": [],
+        "name": "Meaning",
+        "ord": 2,
+        "rtl": false,
+        "size": 20,
+        "sticky": false
+      },
+      {
+        "font": "Arial",
+        "media": [],
+        "name": "Furigana",
+        "ord": 3,
+        "rtl": false,
+        "size": 20,
+        "sticky": false
+      },
+      {
+        "font": "Nimbus Sans [UKWN]",
+        "media": [],
+        "name": "Grammar",
+        "ord": 4,
+        "rtl": false,
+        "size": 20,
+        "sticky": false
+      },
+      {
+        "font": "Arial",
+        "media": [],
+        "name": "GrammarShort",
+        "ord": 5,
+        "rtl": false,
+        "size": 20,
+        "sticky": false
+      },
+      {
+        "font": "Arial",
+        "media": [],
+        "name": "Sentence",
+        "ord": 6,
+        "rtl": false,
+        "size": 20,
+        "sticky": false
+      },
+      {
+        "font": "Arial",
+        "media": [],
+        "name": "AedictTags",
+        "ord": 7,
+        "rtl": false,
+        "size": 20,
+        "sticky": false
+      },
+      {
+        "font": "Arial",
+        "media": [],
+        "name": "CustomNotes",
+        "ord": 8,
+        "rtl": false,
+        "size": 20,
+        "sticky": false
+      },
+      {
+        "font": "Arial",
+        "media": [],
+        "name": "Words",
+        "ord": 9,
+        "rtl": false,
+        "size": 20,
+        "sticky": false
+      }
+    ],
+    "id": 1603991917644,
+    "latexPost": "\\end{document}",
+    "latextPre": null,
+    "mod": 1629074039,
+    "name": "sk.baka.aedict3v8",
+    "req": [
+      [
+        0,
+        "any",
+        [
+          0,
+          5,
+          8
+        ]
+      ],
+      [
+        1,
+        "any",
+        [
+          3,
+          5,
+          8
+        ]
+      ],
+      [
+        2,
+        "any",
+        [
+          2,
+          5,
+          8
+        ]
+      ]
+    ],
+    "sortf": 0,
+    "tmpls": [
+      {
+        "afmt": "<div class=big>{{furigana:Furigana}}</div><br>{{Meaning}}\n<br><div class=small>{{CustomNotes}}</div><br><br>\n<a href=\"#\" onclick=\"document.getElementById('hint').style.display='block';return false;\">Example Sentences</a>\n<div id=\"hint\" style=\"display: none\">{{Sentence}}</div>\n<br><br>\n<a href=\"#\" onclick=\"document.getElementById('grammar').style.display='block';return false;\">{{GrammarShort}}</a>\n<div id=\"grammar\" style=\"display: none\">{{Grammar}}</div>\n<br><div class=small>{{AedictTags}}</div><br><div class=small>{{Tags}}</div>",
+        "bafmt": "",
+        "bfont": "Arial",
+        "bqfmt": "",
+        "bsize": 12,
+        "did": null,
+        "name": "Kanji > Kana+English",
+        "ord": 0,
+        "qfmt": "<div class=big>{{Expression}}</div><br><div class=small>{{GrammarShort}}</div><br><div class=small>{{CustomNotes}}</div>"
+      },
+      {
+        "afmt": "<div class=big>{{furigana:Furigana}}</div><br>{{Meaning}}\n<br><div class=small>{{CustomNotes}}</div><br><br>\n<a href=\"#\" onclick=\"document.getElementById('hint').style.display='block';return false;\">Example Sentences</a>\n<div id=\"hint\" style=\"display: none\">{{Sentence}}</div>\n<br><br>\n<a href=\"#\" onclick=\"document.getElementById('grammar').style.display='block';return false;\">{{GrammarShort}}</a>\n<div id=\"grammar\" style=\"display: none\">{{Grammar}}</div>\n<br><div class=small>{{AedictTags}}</div><br><div class=small>{{Tags}}</div>",
+        "bafmt": "",
+        "bfont": "Arial",
+        "bqfmt": "",
+        "bsize": 12,
+        "did": null,
+        "name": "Kanji+Kana > English",
+        "ord": 1,
+        "qfmt": "<div class=big>{{furigana:Furigana}}</div><br><div class=small>{{GrammarShort}}</div><br><div class=small>{{CustomNotes}}</div>"
+      },
+      {
+        "afmt": "<div class=big>{{furigana:Furigana}}</div><br>{{Meaning}}\n<br><div class=small>{{CustomNotes}}</div><br><br>\n<a href=\"#\" onclick=\"document.getElementById('hint').style.display='block';return false;\">Example Sentences</a>\n<div id=\"hint\" style=\"display: none\">{{Sentence}}</div>\n<br><br>\n<a href=\"#\" onclick=\"document.getElementById('grammar').style.display='block';return false;\">{{GrammarShort}}</a>\n<div id=\"grammar\" style=\"display: none\">{{Grammar}}</div>\n<br><div class=small>{{AedictTags}}</div><br><div class=small>{{Tags}}</div>",
+        "bafmt": "",
+        "bfont": "Arial",
+        "bqfmt": "",
+        "bsize": 12,
+        "did": null,
+        "name": "English > Japanese",
+        "ord": 2,
+        "qfmt": "{{Meaning}}<br><br><div class=small>{{GrammarShort}}</div><br><div class=small>{{CustomNotes}}</div>"
+      }
+    ],
+    "type": 0,
+    "usn": 0,
+    "vers": []
+  },
+  {
+    "css": ".card {\n font-family: arial;\n font-size: 20px;\n text-align: center;\n color: black;\n background-color: white;\n}\n",
+    "did": 1467829130325,
+    "flds": [
+      {
+        "font": "Arial",
+        "media": [],
+        "name": "Front",
+        "ord": 0,
+        "rtl": false,
+        "size": 20,
+        "sticky": false
+      },
+      {
+        "font": "Arial",
+        "media": [],
+        "name": "Back",
+        "ord": 1,
+        "rtl": false,
+        "size": 20,
+        "sticky": false
+      }
+    ],
+    "id": 1465590054374,
+    "latexPost": "\\end{document}",
+    "latextPre": null,
+    "mod": 1512868021,
+    "name": "Basic-e32ed",
+    "req": [
+      [
+        0,
+        "all",
+        [
+          0
+        ]
+      ]
+    ],
+    "sortf": 0,
+    "tmpls": [
+      {
+        "afmt": "{{FrontSide}}\n\n<hr id=answer>\n\n{{Back}}",
+        "bafmt": "",
+        "bqfmt": "",
+        "did": null,
+        "name": "Card 1",
+        "ord": 0,
+        "qfmt": "{{Front}}"
+      }
+    ],
+    "type": 0,
+    "usn": 0,
+    "vers": []
+  }
+]

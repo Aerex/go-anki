@@ -1,0 +1,6 @@
+{{- table -}}
+{{- headers "Name" "Due" "Next" -}} {{- range .Data -}}
+{{- row .Name .Schedule.Due .Schedule.Next | toString -}}
+{{- end -}}{{- endtable -}}
+
+Studied {{ .Meta.Stats.StudiedToday.Cards }} cards in {{ .Meta.Stats.StudiedToday.Time }} seconds
