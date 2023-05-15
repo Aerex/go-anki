@@ -1,0 +1,11 @@
+type: DB
+db: ../db/collection.anki2
+auth-method: PLAIN
+user: aerex 
+pass: PASS
+logger:
+  level: DEBUG
+  file: /tmp/anki-cli.log
+  format: '%{color}%{level:-4s}:%{callpath}%{color:reset} %{message}'
+
+

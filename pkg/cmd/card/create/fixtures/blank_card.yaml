@@ -1,0 +1,12 @@
+type: Default 
+deck: Basic
+fields: 
+  # Front
+  -  |- 
+    Question
+  # Back
+  -  |- 
+    Answer
+
+tags: 
+  - example
