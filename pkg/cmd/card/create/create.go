@@ -2,26 +2,30 @@ package create
 
 import (
 	"bytes"
+	"io/ioutil"
+	"strings"
 
 	"github.com/aerex/go-anki/pkg/anki"
-	"github.com/aerex/go-anki/pkg/editor"
 	"github.com/aerex/go-anki/pkg/models"
 	"github.com/aerex/go-anki/pkg/template"
 	"github.com/op/go-logging"
 	"github.com/spf13/cobra"
+	"gopkg.in/yaml.v2"
 )
 
 var logger = logging.MustGetLogger("ankicli")
 
 type CreateOptions struct {
 	Type     string
+	Quiet    bool
+	File     string
 	Template string
 	NoEditor bool
 	Deck     string
 	Fields   map[string]string
 }
 
-func NewCreateCmd(anki *anki.Anki, overrideF func(*anki.Anki) error) *cobra.Command {
+func NewCreateCmd(anki *anki.Anki) *cobra.Command {
 	opts := &CreateOptions{}
 
 	cmd := &cobra.Command{
@@ -29,19 +33,14 @@ func NewCreateCmd(anki *anki.Anki, overrideF func(*anki.Anki) error) *cobra.Comm
 		DisableFlagsInUseLine: true, // disables [flags] in usage text
 		Short:                 "Create a card",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if overrideF != nil {
-				return overrideF(anki)
-			}
-			if len(args) > 0 && args[0] == "help" {
-				return cmd.Usage()
-			}
 			return createCmd(anki, opts)
 		},
 	}
 
 	cmd.Flags().StringVarP(&opts.Type, "type", "t", "Basic", "The note type")
+	cmd.Flags().StringVarP(&opts.File, "file", "F", "", "Read card content from file. Use \"-\" for stdin")
+	cmd.Flags().BoolVarP(&opts.Quiet, "quiet", "q", false, "Silence")
 	cmd.Flags().StringVarP(&opts.Deck, "deck", "d", "Default", "The name of the deck the new card will be added to")
-	// FIXME: Need to use another character option for template
 	cmd.Flags().StringVar(&opts.Template, "template", "", "Override template for create a card")
 	cmd.Flags().BoolVar(&opts.NoEditor, "no-edit", false, "Disable using the editor")
 	cmd.Flags().StringToStringVarP(&opts.Fields, "field", "f", map[string]string{}, "Set the card fields")
@@ -50,10 +49,13 @@ func NewCreateCmd(anki *anki.Anki, overrideF func(*anki.Anki) error) *cobra.Comm
 }
 
 func createCmd(anki *anki.Anki, opts *CreateOptions) error {
+	var (
+		cardType string
+		deckName string
+	)
 	tmpl := template.CREATE_CARD
-	cardType := "Basic"
-	deckName := "Default"
 	note := models.Note{}
+	createNote := models.CreateNote{}
 	if opts.Type != "" {
 		cardType = opts.Type
 	}
@@ -84,12 +86,17 @@ func createCmd(anki *anki.Anki, opts *CreateOptions) error {
 		return err
 	}
 
-	if !opts.NoEditor {
-		edit := editor.NewModelEditor(anki, &note, &noteType)
-		edit.Create()
-		defer edit.Remove()
+	var (
+		data    []byte
+		changed bool
+	)
+	if opts.File == "" {
+		if err := anki.Editor.Create(); err != nil {
+			return err
+		}
+		defer anki.Editor.Remove()
 		for {
-			err, changed := edit.EditNote()
+			err, data, changed = anki.Editor.Edit(noteType)
 			if !changed {
 				return nil
 			}
@@ -97,15 +104,31 @@ func createCmd(anki *anki.Anki, opts *CreateOptions) error {
 			if err == nil {
 				break
 			}
-			retry := edit.ConfirmUserError()
+			retry := anki.Editor.ConfirmUserError()
 			if !retry {
 				logger.Error(err)
 				return err
 			}
 		}
+	} else {
+		data, err = ioutil.ReadFile(opts.File)
+		if err != nil {
+			return err
+		}
 	}
 
-	// TODO: Figure out what to do with output card
+	if err := yaml.Unmarshal(data, &createNote); err != nil {
+		return err
+	}
+
+	// TODO: May need to move this to a method
+	note.Model = noteType
+	for _, fld := range createNote.Fields {
+		note.Fields = append(note.Fields, fld)
+	}
+	note.StringTags = strings.Join(createNote.Tags, ",")
+
+	// TODO: Figure out what to do with output card,
 	_, err = anki.Api.CreateCard(note, noteType, deckName)
 	if err != nil {
 		logger.Error(err)

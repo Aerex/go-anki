@@ -25,15 +25,15 @@ type ListOptions struct {
 	Limit    int
 }
 
-func NewListCmd(anki *anki.Anki, overrideF func(*anki.Anki) error) *cobra.Command {
+func NewListCmd(anki *anki.Anki) *cobra.Command {
 	opts := &ListOptions{}
 
 	cmd := &cobra.Command{
 		Use:   "list [-q quiet] [-t template]",
 		Short: "List cards",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if overrideF != nil {
-				return overrideF(anki)
+			if opts.Limit < 0 {
+				return fmt.Errorf("invalid limit: %v", opts.Limit)
 			}
 			return listCmd(anki, opts)
 		},
@@ -60,12 +60,7 @@ func listCmd(anki *anki.Anki, opts *ListOptions) error {
 		query = opts.Query
 	}
 
-	limit := -1
-	if opts.Limit != -1 {
-		limit = opts.Limit
-	}
-
-	cards, err := anki.Api.GetCards(query, limit)
+	cards, err := anki.Api.GetCards(query, opts.Limit)
 	if err != nil {
 		return err
 	}
@@ -113,7 +108,7 @@ func listCmd(anki *anki.Anki, opts *ListOptions) error {
 			var cardTmpl models.CardTemplate
 			// TODO: May need to sort this instead of iterating
 			// NOTE: Could be slow if we have many templates per card
-			if card.Note.Model.Type == models.Cloze {
+			if card.Note.Model.Type == models.ClozeCardType {
 				cardTmpl = *card.Note.Model.Templates[0]
 			} else {
 				for _, tmpl := range card.Note.Model.Templates {
@@ -152,6 +147,7 @@ func listCmd(anki *anki.Anki, opts *ListOptions) error {
 					}
 				}
 			}(cardTmpl, (idx_c + 1))
+
 			t.Execute(&qb, instance)
 
 			afmt, err = template.ParseCardTemplate(template.TemplateParseOptions{

@@ -1,16 +1,20 @@
 package template
 
+//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 -generate
+
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
 	"runtime"
 	"strings"
 	"text/template"
+	"time"
 
-	"github.com/Masterminds/sprig"
 	"github.com/aerex/go-anki/internal/config"
 	"github.com/aerex/go-anki/pkg/io"
+	"github.com/aerex/go-anki/pkg/models"
 	"gopkg.in/AlecAivazis/survey.v1"
 	"gopkg.in/yaml.v2"
 )
@@ -26,6 +30,7 @@ const (
 	LIST_CARD_TYPES         = "list-card-types"
 )
 
+//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 . Template
 type Template interface {
 	Load(string) error
 	Execute(interface{}, *io.IO) error
@@ -45,8 +50,7 @@ func NewTemplate(config *config.Config) Template {
 	}
 }
 func LoadString(tmpl string, config *config.Config, renderType string) (*template.Template, error) {
-	t, err := template.New("ankicli").Funcs(sprig.GenericFuncMap()).
-		Funcs(CustomFuncMaps()).
+	t, err := template.New("ankicli").Funcs(CustomFuncMaps()).
 		Funcs(FieldReplacementMap(config, renderType)).
 		Parse(tmpl)
 	if err != nil {
@@ -120,7 +124,7 @@ func (t *AnkiTemplate) Load(pathname string) error {
 		}
 
 		// Load template engine with useful template functions
-		t.loadedTemplate = template.New("ankicli").Funcs(sprig.GenericFuncMap())
+		t.loadedTemplate = template.New("ankicli").Funcs(CustomFuncMaps())
 		t.data = data
 		return nil
 	}
@@ -145,14 +149,56 @@ func (t *AnkiTemplate) LoadedTemplate() *template.Template {
 	return t.loadedTemplate
 }
 
-func CustomFuncMaps() map[string]interface{} {
-	return map[string]interface{}{
+// dateInZone
+// see sprig
+func dateInZone(fmt string, date interface{}, zone string) (string, error) {
+	var t time.Time
+	switch date := date.(type) {
+	default:
+		t = time.Now()
+	case time.Time:
+		t = date
+	case *time.Time:
+		t = *date
+	case models.UnixTime:
+		t = time.Unix(int64(date), 0)
+	case int64:
+		t = time.Unix(date, 0)
+	case int:
+		t = time.Unix(int64(date), 0)
+	case int32:
+		t = time.Unix(int64(date), 0)
+	}
+
+	loc, err := time.LoadLocation(zone)
+	if err != nil {
+		loc, err = time.LoadLocation("UTC")
+		if err != nil {
+			return "", err
+		}
+	}
+
+	return t.In(loc).Format(fmt), nil
+}
+
+func CustomFuncMaps() template.FuncMap {
+	return template.FuncMap{
+		"toJson": func(content interface{}) (string, error) {
+			jsonData, err := json.Marshal(content)
+			if err != nil {
+				return "", err
+			}
+			return string(jsonData), nil
+		},
 		"toYaml": func(content interface{}) (string, error) {
 			yamlData, err := yaml.Marshal(content)
 			if err != nil {
 				return "", err
 			}
 			return string(yamlData), nil
+		},
+		"date": func(fmt string, content interface{}) (string, error) {
+			return dateInZone(fmt, content, "Local")
 		},
 	}
 }

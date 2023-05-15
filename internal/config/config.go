@@ -42,7 +42,7 @@ type DBConfig struct {
 	Path string `yaml:"db.path"`
 }
 type Config struct {
-	// Options are `REST`, `SQLITE3`
+	// Options are `REST`, `DB`
 	Type string `yaml:"type"`
 	// (Optional) the location of the database. If set TYPE must be set as DB
 	DB DBConfig `yaml:"db,omitempty"`

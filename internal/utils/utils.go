@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"crypto/sha1"
 	"encoding/base64"
+	"encoding/hex"
 	"html"
 	"io"
 	"path/filepath"
@@ -49,7 +50,7 @@ func StripHTMLMedia(data string) string {
 	if err != nil {
 		return ""
 	}
-	d := reMedia.ReplaceAllString(" \\1 ", data)
+	d := reMedia.ReplaceAllString(data, " \\1 ")
 	return stripHTML(d)
 }
 
@@ -78,7 +79,13 @@ func stripHTML(data string) string {
 	return s
 }
 
-func FieldChecksum(data string) []byte {
+func JoinFields(fields []string) string {
+	return strings.Join(fields, "\x1f")
+}
+
+func FieldChecksum(data string) string {
+
+	//return int(checksum(stripHTMLMedia(data).encode("utf-8"))[:8], 16)
 	// strip html
 	data = StripHTMLMedia(data)
 	// encode in utf8
@@ -86,7 +93,7 @@ func FieldChecksum(data string) []byte {
 	// generate checksum
 	h := sha1.New()
 	io.WriteString(h, data)
-	return h.Sum(nil)
+	return hex.EncodeToString(h.Sum(nil))
 }
 
 func ArrayStringContains(item string, items []string) bool {

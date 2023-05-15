@@ -47,7 +47,8 @@ func (i *IO) Eval(cmdString string, buf *bytes.Buffer) error {
 	if err != nil {
 		return err
 	}
-	cmd := i.ExecContext(cmdSplit[0], cmdSplit[1:]...)
+	//cmd := i.ExecContext(cmdSplit[0], cmdSplit[1:]...)
+	cmd := exec.Command(cmdSplit[0], cmdSplit[1:]...)
 	// Set stdout to write buffer
 	cmd.Stdout, cmd.Stderr, cmd.Stdin = os.Stdout, os.Stderr, os.Stdin
 	if buf != nil {

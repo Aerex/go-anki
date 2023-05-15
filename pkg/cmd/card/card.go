@@ -13,8 +13,8 @@ func NewCardCmd(anki *anki.Anki) *cobra.Command {
 		Short: "Manage cards",
 	}
 
-	cmd.AddCommand(cmdList.NewListCmd(anki, nil))
-	cmd.AddCommand(cmdCreate.NewCreateCmd(anki, nil))
+	cmd.AddCommand(cmdList.NewListCmd(anki))
+	cmd.AddCommand(cmdCreate.NewCreateCmd(anki))
 
 	return cmd
 }

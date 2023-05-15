@@ -8,6 +8,7 @@ import (
 
 	"github.com/aerex/go-anki/api"
 	"github.com/aerex/go-anki/internal/config"
+	"github.com/aerex/go-anki/pkg/models"
 	"github.com/go-resty/resty/v2"
 	"github.com/op/go-logging"
 )
@@ -69,9 +70,9 @@ func NewApi(config *config.Config) api.Api {
 //  return req.Get(url)
 //}
 
-func (a RestApi) GetDecks(qs string) ([]models.Deck, error) {
+func (a RestApi) GetDecks(qs string) (models.Decks, error) {
 	if a.Config.Endpoint != "" {
-		decks := &[]models.Deck{}
+		decks := &models.Decks{}
 		req := a.Client.R()
 		req.SetResult(decks)
 		if qs != "" {
@@ -79,13 +80,13 @@ func (a RestApi) GetDecks(qs string) ([]models.Deck, error) {
 		}
 		_, err := req.Get(DECKS_URI)
 		if err != nil {
-			return []models.Deck{}, err
+			return models.Decks{}, err
 		}
 		return *decks, nil
 	}
 	// TODO: Need to move this to an error module or something
 	// Same thing on line 66
-	return []models.Deck{}, errors.New("could not get decks")
+	return models.Decks{}, errors.New("could not get decks")
 }
 
 func (a RestApi) GetClient() *http.Client {
@@ -132,7 +133,7 @@ func (a RestApi) RenameDeck(nameOrId, newName string) (models.Deck, error) {
 	return models.Deck{}, errors.New("could not rename deck")
 }
 
-func (a RestApi) CreateDeck(name string) (models.Deck, error) {
+func (a RestApi) CreateDeck(name string, deckType string) (models.Deck, error) {
 	if a.Config.Endpoint != "" {
 		createdDeck := &models.Deck{}
 		errorResponse := &ErrorResponse{}
@@ -156,9 +157,12 @@ func (a RestApi) CreateDeck(name string) (models.Deck, error) {
 	return models.Deck{}, errors.New("could not create deck")
 }
 
-func (a RestApi) GetAllDeckConfigs() ([]models.DeckConfig, error) {
+func (a RestApi) GetAllDeckConfigs() (models.DeckConfigs, error) {
+	panic("unimplemented")
+}
 
-	return []models.DeckConfig{}, errors.New("could not get all deck config")
+func (a RestApi) GetNoteType(name string) (models.NoteType, error) {
+	panic("unimplemented")
 }
 
 func (a RestApi) GetDeckConfig(nameOrId string) (models.DeckConfig, error) {
@@ -226,24 +230,31 @@ func (a RestApi) GetCards(qs string, limit int) ([]models.Card, error) {
 	return []models.Card{}, errors.New("could not get cards")
 }
 
-func (a RestApi) CreateCard(card models.Card) (models.Card, error) {
+func (a RestApi) CreateCard(note models.Note, mdl models.NoteType, deckName string) (models.Card, error) {
 	if a.Config.Endpoint != "" {
-		createdCard := &models.Card{}
+		createdCard := models.Card{
+			Note: models.Note{
+				Model: mdl,
+			},
+			Deck: models.Deck{
+				Name: deckName,
+			},
+		}
 		req := a.Client.R()
 		req.SetResult(createdCard)
-		req.SetBody(&card)
-		_, err := req.Post(fmt.Sprintf("%s/%s/cards", DECKS_URI, card.Deck.Name))
+		req.SetBody(&createdCard)
+		_, err := req.Post(fmt.Sprintf("%s/%s/cards", DECKS_URI, createdCard.Deck.Name))
 		if err != nil {
 			return models.Card{}, err
 		}
-		return *createdCard, nil
+		return createdCard, nil
 	}
 	return models.Card{}, errors.New("could not create card")
 }
 
-func (a RestApi) GetModels(name string) ([]models.CardModel, error) {
+func (a RestApi) GetModels(name string) (models.NoteTypes, error) {
 	if a.Config.Endpoint != "" {
-		mdls := &[]models.CardModel{}
+		mdls := &models.NoteTypes{}
 		req := a.Client.R()
 		req.SetResult(mdls)
 		if name != "" {
@@ -251,9 +262,9 @@ func (a RestApi) GetModels(name string) ([]models.CardModel, error) {
 		}
 		resp, err := req.Get(fmt.Sprintf("%s/models", COLLECTION_URI))
 		if err != nil || resp.IsError() {
-			return []models.CardModel{}, err
+			return models.NoteTypes{}, err
 		}
 		return *mdls, nil
 	}
-	return []models.CardModel{}, errors.New("could not find card model")
+	return models.NoteTypes{}, errors.New("could not find note type")
 }

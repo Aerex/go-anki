@@ -11,7 +11,7 @@ type CreateDeckOptions struct {
 	Type string
 }
 
-func NewCreateCmd(anki *anki.Anki, overrideF func(*anki.Anki) error) *cobra.Command {
+func NewCreateCmd(anki *anki.Anki, cb func(*anki.Anki) error) *cobra.Command {
 	opts := &CreateDeckOptions{}
 
 	cmd := &cobra.Command{
@@ -20,8 +20,8 @@ func NewCreateCmd(anki *anki.Anki, overrideF func(*anki.Anki) error) *cobra.Comm
 		Args:         cobra.ExactArgs(1),
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if overrideF != nil {
-				return overrideF(anki)
+			if cb != nil {
+				return cb(anki)
 			}
 			return createCmd(anki, args, opts)
 		},

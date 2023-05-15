@@ -10,77 +10,78 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/aerex/go-anki/pkg/anki"
 	"github.com/aerex/go-anki/pkg/io"
+	"github.com/aerex/go-anki/pkg/template"
 	"github.com/spf13/viper"
 	"gopkg.in/AlecAivazis/survey.v1"
-	"gopkg.in/yaml.v2"
 )
 
-type ModelEditor struct {
+//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 . Editor
+type Editor interface {
+	Edit(in interface{}) (error, []byte, bool)
+	Clone() (err error)
+	Create() error
+	Remove() error
+	ConfirmUserError() bool
+}
+
+type modelEditor struct {
 	FilePath     string
 	OrigFilePath string
 	Program      string
 	IO           *io.IO
 
-	anki  *anki.Anki
-	out   interface{}
-	in    interface{}
-	retry bool
+	templates template.Template
+	retry     bool
 }
 
-func NewModelEditor(anki *anki.Anki, out interface{}, in interface{}) *ModelEditor {
-	return &ModelEditor{
-		anki:    anki,
-		out:     out,
-		in:      in,
-		Program: getEditor(),
+func NewModelEditor(tmpl template.Template, io *io.IO) Editor {
+	return &modelEditor{
+		templates: tmpl,
+		Program:   getEditor(),
+		IO:        io,
 	}
 }
 
-// EditNote writes a card note model to a temp yaml file
-func (e *ModelEditor) EditNote() (error, bool) {
+// Edit writes a card note model to a temp yaml file
+func (e *modelEditor) Edit(in interface{}) (error, []byte, bool) {
 	// copy over orignal data so user can start fresh when editing
 
 	// Write template to file (e.in)
 	if !e.retry {
-		if err := e.anki.Templates.Execute(e.in, e.IO); err != nil {
-			return err, false
+		if err := e.templates.Execute(in, e.IO); err != nil {
+			return err, []byte{}, false
 		}
 	}
 
 	// close file then clone file to restore so user has
 	// a fresh state if  error occurs after editing
-	if err := e.cloneFile(); err != nil {
-		return err, false
+	if err := e.Clone(); err != nil {
+		return err, []byte{}, false
 	}
 
 	// Open file using editor
-	if err := e.anki.IO.Eval(fmt.Sprintf("%s %s", e.Program, e.FilePath), nil); err != nil {
-		return err, false
+	if err := e.IO.Eval(fmt.Sprintf("%s %s", e.Program, e.FilePath), nil); err != nil {
+		return err, []byte{}, false
 	}
 
 	changed, err := e.hasChanges()
 	if err != nil {
-		return err, false
+		return err, []byte{}, false
 	}
 
 	// do not continue if file has not changed
 	if !changed {
-		return nil, false
+		return nil, []byte{}, false
 	}
 
 	// Open file then unmarshall file content to model
 	data, err := ioutil.ReadFile(e.FilePath)
 	if err != nil {
-		return err, changed
+		return err, []byte{}, changed
 	}
 
-	if err := yaml.Unmarshal(data, e.out); err != nil {
-		return err, changed
-	}
-
-	return nil, changed
+	return nil, data, changed
 }
 
 func getEditor() string {
@@ -94,7 +95,7 @@ func getEditor() string {
 	return editor
 }
 
-func (e *ModelEditor) cloneFile() (err error) {
+func (e *modelEditor) Clone() (err error) {
 	// Get filename without ext
 	var src, dst *os.File
 	_, tmpFileName := path.Split(e.FilePath)
@@ -113,7 +114,8 @@ func (e *ModelEditor) cloneFile() (err error) {
 	return
 }
 
-func (e *ModelEditor) Create() error {
+// Create will create a new file for a entity
+func (e *modelEditor) Create() error {
 	f, err := os.CreateTemp("", "anki-editor-*.yml")
 
 	if err != nil {
@@ -130,7 +132,7 @@ func (e *ModelEditor) Create() error {
 // To determine if a file had been changed the following conditions are checked
 // 1) File Size
 // 2) File Content
-func (e *ModelEditor) hasChanges() (bool, error) {
+func (e *modelEditor) hasChanges() (bool, error) {
 	// Open edited file and read by buffer pages
 
 	file, err := os.Open(e.FilePath)
@@ -183,7 +185,7 @@ func (e *ModelEditor) hasChanges() (bool, error) {
 }
 
 // Remove removes all editor files including copies
-func (e *ModelEditor) Remove() (err error) {
+func (e *modelEditor) Remove() (err error) {
 	if err = os.Remove(e.FilePath); err != nil {
 		return
 	}
@@ -193,7 +195,7 @@ func (e *ModelEditor) Remove() (err error) {
 	return
 }
 
-func (e *ModelEditor) ConfirmUserError() bool {
+func (e *modelEditor) ConfirmUserError() bool {
 	var confirm bool
 	survey.AskOne(
 		&survey.Confirm{

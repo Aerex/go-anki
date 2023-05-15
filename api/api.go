@@ -1,19 +1,22 @@
 package api
 
+//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 -generate
+
 import (
 	"net/http"
 
 	"github.com/aerex/go-anki/internal/config"
 	"github.com/aerex/go-anki/pkg/models"
-	fanki "github.com/flimzy/anki"
 )
 
 const (
-	PLAIN = "PLAIN"
-	REST  = "REST"
-	DB    = "DB"
+	PLAIN   = "PLAIN"
+	REST    = "REST"
+	SQLITE3 = "SQLITE3"
+	DB      = "DB"
 )
 
+//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 . Api
 // Method definitions for interacting with the anki api
 type Api interface {
 
@@ -21,14 +24,14 @@ type Api interface {
 	// Support simple search and regex expression
 	// See https://docs.ankiweb.net/searching.html#simple-searches
 	// See https://docs.ankiweb.net/searching.html#regular-expressions
-	GetDecks(qs string) ([]fanki.Deck, error)
+	GetDecks(qs string) (models.Decks, error)
 	// Get http client used in api. Useful for mocking http client in test
 	GetClient() *http.Client
 	// Get the number of cards studied and the amount of time studied (in seconds) for a collectionin seo
 	// Result can be filter by the provided query string. See GetDecks for more example usage
 	GetStudiedStats(filter string) (models.CollectionStats, error)
 	// Rename the deck using its ID or name
-	RenameDeck(nameOrId string, newName string) (fanki.Deck, error)
+	RenameDeck(nameOrId string, newName string) (models.Deck, error)
 	// Create a deck
 	CreateDeck(name string, deckType string) (models.Deck, error)
 	// Get multiple cards

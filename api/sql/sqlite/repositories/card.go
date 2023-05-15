@@ -89,8 +89,6 @@ func (c cardRepo) Exists(cardId int64) (err error, exists bool) {
 
 func (c cardRepo) Create(card models.Card) (err error) {
 
-	// REMOVEME: Do not commit
-	fmt.Printf("\ncard: %+v\n", card)
 	query := `INSERT OR REPLACE INTO cards (nid, did, ord, mod, usn, type, queue, due, ivl, factor, reps, lapses, left, odue, odid, flags, data) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?, "")`
 	if c.Tx != nil {
 		if _, err = c.Tx.Exec(query, card.NoteID, card.DeckID, card.Ord, card.Mod, card.USN, card.Type, card.Queue,

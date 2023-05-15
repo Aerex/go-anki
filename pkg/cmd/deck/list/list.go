@@ -4,7 +4,6 @@ import (
 	"github.com/aerex/go-anki/pkg/anki"
 	"github.com/aerex/go-anki/pkg/models"
 	"github.com/aerex/go-anki/pkg/template"
-	fanki "github.com/flimzy/anki"
 	"github.com/spf13/cobra"
 )
 
@@ -13,15 +12,15 @@ type ListOptions struct {
 	Template string
 }
 
-func NewListCmd(anki *anki.Anki, overrideF func(*anki.Anki) error) *cobra.Command {
+func NewListCmd(anki *anki.Anki, cb func(*ListOptions) error) *cobra.Command {
 	opts := &ListOptions{}
 
 	cmd := &cobra.Command{
 		Use:   "list <options>",
 		Short: "List decks",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if overrideF != nil {
-				return overrideF(anki)
+			if cb != nil {
+				return cb(opts)
 			}
 			return listCmd(anki, opts)
 		},
@@ -58,7 +57,7 @@ func listCmd(anki *anki.Anki, opts *ListOptions) error {
 	}
 
 	data := struct {
-		Data []fanki.Deck
+		Data models.Decks
 		Meta models.CollectionStats
 	}{
 		Data: decks,

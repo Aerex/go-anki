@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"text/template"
 
 	"github.com/aerex/go-anki/internal/utils"
 	"github.com/aerex/go-anki/pkg/io"
@@ -26,10 +27,10 @@ var tableStypeMap = map[string]prettytable.Style{
 	"rounded":          prettytable.StyleRounded,
 }
 
-func TableFuncMap(io *io.IO) map[string]interface{} {
+func TableFuncMap(io *io.IO) template.FuncMap {
 	var table prettytable.Writer
 
-	return map[string]interface{}{
+	return template.FuncMap{
 		"row": func(entries ...interface{}) (string, error) {
 			var row prettytable.Row
 			for _, entry := range entries {
@@ -78,6 +79,10 @@ func TableFuncMap(io *io.IO) map[string]interface{} {
 					case "colSep":
 						table.Style().Box.LeftSeparator = string(value)
 						table.Style().Box.RightSeparator = string(value)
+					case "rowSep":
+						table.Style().Box.TopSeparator = string(value)
+						table.Style().Box.BottomSeparator = string(value)
+
 						//		//case "rowSep":
 						//			//table.SetRowSeparator(string(value))
 						//		//	if string(value) != "" {

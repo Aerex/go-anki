@@ -128,7 +128,7 @@ type NoteType struct {
 	// Issue it the decoded byte array is not providing the full array to unmarshal
 	//RequiredFields *CardRequirements `json:"req"`
 	// Same as the other usn
-	Usn int `json:"usn"`
+	USN int `json:"usn"`
 }
 
 type NoteFields []string
@@ -143,10 +143,16 @@ type Note struct {
 	ModelID ID         `json:"mid" yaml:"mid" db:"mid"`
 	Mod     UnixTime   `json:"mod" yaml:"mod" db:"mod"`
 	// model describes the note type
-	Model      NoteType `json:"model" yaml:"model"`
-	LatexPost  string
+	Model     NoteType `json:"model" yaml:"model"`
+	LatexPost string
+	// sort field: used for quick sorting and duplicate check.
+	// The sort field is an integer so that when users are sorting on a field that contains only numbers,
+	// they are sorted in numeric instead of lexical order. Text is stored in this integer field.
+	SortField  string `json:"sfld" yaml:"sfld" db:"sfld"`
+	USN        int    `json:"usn" yaml:"usn" db:"usn"`
 	LatexPre   string `json:"latexPost,omitempty" yaml:"laxtexPost,omitempty" db:"laxtexPost,omitempty"`
-	StringTags string `json:"string_tags" yaml:"string_tags" db:"string_tags"`
+	StringTags string `json:"string_tags" yaml:"string_tags" db:"tags"`
+	Checksum   uint64 `yaml:"csum" db:"csum"`
 }
 
 // structure for cards
@@ -154,7 +160,7 @@ type Card struct {
 	ID             ID       `json:"id" db:"id"`
 	Ord            int      `json:"ord" db:"ord"`
 	Mod            UnixTime `json:"mod" db:"mod"`
-	Usn            int      `json:"usn" db:"usn"`
+	USN            int      `json:"usn" db:"usn"`
 	Type           CardType `json:"type" db:"type" `
 	Queue          CardQue  `json:"queue" db:"queue"`
 	Due            UnixTime `json:"due" db:"due"`
@@ -174,6 +180,13 @@ type Card struct {
 	OriginalDeckID ID       `json:"odid" db:"odid"`
 	DeckID         ID       `json:"did" db:"did"`
 	Deck           Deck     `json:"deck" db:"deck"`
+}
+
+type CreateNote struct {
+	Type   string   `yaml:"type"`
+	Deck   string   `yaml:"deck"`
+	Fields []string `yaml:"fields"`
+	Tags   []string `yaml:"tags"`
 }
 
 type CardType int
@@ -218,15 +231,27 @@ type Stats struct {
 // The structure representing the stats studied today
 type StudiedToday struct {
 	// The number of cards studied today
-	Cards int `json:"cards"`
+	Cards int `json:"cards" db:"cards"`
 	// The number of seconds spent studying today
-	Time int `json:"time"`
+	Time int64 `json:"time" db:"time"`
+	// The number of failed cards
+	Failed int `json:"failed" db:"failed"`
+	// The number of learning cards
+	Learning int `json:"learning" db:"learning"`
+	// The number of reviewed cards
+	Review int `json:"review" db:"review"`
+	// The number of relearned cards
+	Relearn int `json:"relearned" db:"relearned"`
+	// The number of filtered cards
+	Filter int `json:"filter" filter:"filter"`
 }
 
 // The structure representing the collection for the user
 type Collection struct {
 	// arbitrary number since there is only one row
-	ID      ID       `json:"id"`
+	ID ID `json:"id"`
+	// update sequence number: used for finding diffs when syncing.
+	USN     int      `json:"usn" db:"usn"`
 	Created UnixTime `json:"crt" db:"crt"`
 	// json object containing configuration options that are synced.
 	Conf      CollectionConf `json:"conf" db:"conf"`
@@ -260,6 +285,27 @@ type CollectionStats struct {
 	Stats `json:"stats"`
 }
 
+type ReviewType int
+
+const (
+	ReviewTypeLearn ReviewType = iota
+	ReviewTypeReview
+	ReviewTypeRelearn
+	ReviewTypeCram
+)
+
+type ReviewLog struct {
+	ID           ID    `json:"id" db:"id"`
+	CID          ID    `json:"cid" db:"cid"`
+	USN          int   `json:"usn" db:"usn"`
+	Ease         int   `json:"ease" db:"ease"`
+	Interval     int   `json:"ivl" db:"ivl"`
+	LastInterval int   `json:"lastIvl" db:"lastIvl"`
+	Factor       int   `json:"factor" db:"factor"`
+	Time         int64 `json:"time" db:"time"`
+	Type         int
+}
+
 type CollectionConf struct {
 	// This is the highest value of a due value of a new card.
 	// It allows to decide the due number to give to the next note created.
@@ -282,7 +328,7 @@ type Deck struct {
 	// The update sequence number used to figure out diffs when syncing.
 	// value of -1 indicates changes that need to be pushed to server.
 	// usn < server usn indicates changes that need to be pulled from server.
-	Usn int `json:"usn" db:"usn"`
+	USN int `json:"usn" db:"usn"`
 	// True when deck is collapsed
 	Collapsed bool `json:"collapsed" db:"collapsed"`
 	// True when deck collapsed in browser
@@ -323,13 +369,14 @@ const (
 type ModelType int
 
 const (
-	Standard ModelType = iota
-	Cloze
+	StandardCardType ModelType = iota
+	ClozeCardType
 )
 
 // structure for deck options
 // See https://github.com/ankidroid/Anki-Android/wiki/Database-Structure#dconf-jsonobjects
 type DeckConfig struct {
+	ID ID `json:"id"`
 	// Whether the audio associated to a question should be
 	Autoplay bool `json:"autoplay"`
 	// Whether this deck is dynamic. Not present by default in decks.py
@@ -379,9 +426,9 @@ type DeckConfig struct {
 		// Whether to bury cards related to new cards answered
 		Bury bool `json:"bury"`
 		// The number to add to the easyness when the easy button is pressed
-		Ease4 int `json:"ease4"`
+		Ease4 float32 `json:"ease4"`
 		// The new interval is multiplied by a random number between -fuzz and fuzz
-		Fuzz int `json:"fuzz"`
+		Fuzz float32 `json:"fuzz"`
 		// Multiplication factor applied to the intervals Anki generates"
 		IvlFct int `json:"ivlFct"`
 		// The maximal interval for review
@@ -390,10 +437,10 @@ type DeckConfig struct {
 		PerDay int `json:"perDay"`
 	} `json:"rev"`
 	// Whether timer should be shown
-	Timer bool `json:"timer"`
+	Timer BoolVar `json:"timer"`
 	// TODO: I think this should be readonly
 	// Update sequence number used to figure out diffs when syncing.
 	// value of -1 indicates changes that need to be pushed to server.
 	// usn < server usn indicates changes that need to be pulled from server.
-	Usn int `json:"usn"`
+	USN int `json:"usn"`
 }

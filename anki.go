@@ -8,6 +8,7 @@ import (
 	"github.com/aerex/go-anki/internal/config"
 	"github.com/aerex/go-anki/internal/logger"
 	"github.com/aerex/go-anki/pkg/anki"
+	"github.com/aerex/go-anki/pkg/editor"
 	"github.com/aerex/go-anki/pkg/io"
 	"github.com/aerex/go-anki/pkg/root"
 	"github.com/aerex/go-anki/pkg/template"
@@ -21,9 +22,10 @@ import (
 
 func main() {
 	var cfg config.Config
+	i := io.NewSystemIO()
 
 	anki := &anki.Anki{
-		IO: io.NewSystemIO(),
+		IO: i,
 	}
 
 	// PERF: Maybe move this if block into a method
@@ -38,7 +40,7 @@ func main() {
 
 			// If yes, copy over sample to user configuration directory
 			if createConfigFile {
-				configFilePath, err := config.GenerateSampleConfig(&cfg, anki.IO)
+				configFilePath, err := config.GenerateSampleConfig(&cfg, io.NewSystemIO())
 				if err != nil {
 					fmt.Fprintln(os.Stderr, "Could not generate sample configuration file ", err)
 					os.Exit(1)
@@ -56,6 +58,7 @@ func main() {
 	anki.Api = api.NewApi(&cfg)
 	anki.Config = &cfg
 	anki.Templates = template.NewTemplate(&cfg)
+	anki.Editor = editor.NewModelEditor(anki.Templates, io.NewSystemIO())
 
 	if err := logger.ConfigureLogger(anki, "ankicli"); err != nil {
 		fmt.Println(err)
@@ -72,7 +75,6 @@ func main() {
 	// Run anki-cli
 	var root = root.NewRootCmd(anki)
 	if err := root.Execute(); err != nil {
-		fmt.Println(err)
 		os.Exit(1)
 	}
 }

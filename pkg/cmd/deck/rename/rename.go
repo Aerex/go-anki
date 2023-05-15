@@ -11,7 +11,7 @@ type RenameOptions struct {
 	Quiet bool
 }
 
-func NewRenameCmd(anki *anki.Anki, overrideF func(*anki.Anki) error) *cobra.Command {
+func NewRenameCmd(anki *anki.Anki, cb func(*anki.Anki) error) *cobra.Command {
 	opts := &RenameOptions{}
 
 	cmd := &cobra.Command{
@@ -20,8 +20,8 @@ func NewRenameCmd(anki *anki.Anki, overrideF func(*anki.Anki) error) *cobra.Comm
 		Args:         cobra.ExactArgs(2),
 		SilenceUsage: true,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if overrideF != nil {
-				return overrideF(anki)
+			if cb != nil {
+				return cb(anki)
 			}
 			return renameCmd(anki, opts, args)
 		},
