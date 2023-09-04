@@ -70,7 +70,7 @@ func NewApi(config *config.Config) api.Api {
 //  return req.Get(url)
 //}
 
-func (a RestApi) GetDecks(qs string) (models.Decks, error) {
+func (a RestApi) Decks(qs string, includeStats bool) (models.Decks, error) {
 	if a.Config.Endpoint != "" {
 		decks := &models.Decks{}
 		req := a.Client.R()
@@ -93,22 +93,23 @@ func (a RestApi) GetClient() *http.Client {
 	return a.Client.GetClient()
 }
 
-func (a RestApi) GetStudiedStats(qs string) (models.CollectionStats, error) {
-	if a.Config.Endpoint != "" {
-		stats := &models.CollectionStats{}
-		req := a.Client.R()
-		req.SetResult(stats)
-		req.SetQueryParam("include", "meta")
-		if qs != "" {
-			req.SetQueryParam("query", qs)
-		}
-		if _, err := req.Get(COLLECTION_URI); err != nil {
-			return models.CollectionStats{}, err
-		}
-		return *stats, nil
-	}
-	return models.CollectionStats{}, errors.New("could not get studied stats")
-}
+// TODO: Reimplemenat to return stats based on stats class in AnkiDroid or Anki Desktop
+//func (a RestApi) GetStudiedStats(qs string) (models.CollectionStats, error) {
+//	if a.Config.Endpoint != "" {
+//		stats := &models.CollectionStats{}
+//		req := a.Client.R()
+//		req.SetResult(stats)
+//		req.SetQueryParam("include", "meta")
+//		if qs != "" {
+//			req.SetQueryParam("query", qs)
+//		}
+//		if _, err := req.Get(COLLECTION_URI); err != nil {
+//			return models.CollectionStats{}, err
+//		}
+//		return *stats, nil
+//	}
+//	return models.CollectionStats{}, errors.New("could not get studied stats")
+//}
 
 func (a RestApi) RenameDeck(nameOrId, newName string) (models.Deck, error) {
 	if a.Config.Endpoint != "" {

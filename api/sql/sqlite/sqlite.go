@@ -28,6 +28,20 @@ type SqliteApi struct {
 	DeckService services.DeckService
 }
 
+func NewApi(config *config.Config) api.Api {
+	api := &SqliteApi{
+		Config: config,
+	}
+	db := sqlx.MustConnect(strings.ToLower(config.DB.Driver), config.DB.Path)
+	cardRepo := repos.NewCardRepository(db)
+	colRepo := repos.NewColRepository(db)
+	deckRepo := repos.NewDeckRepository(db)
+	noteRepo := repos.NewNoteRepository(db)
+	api.CardService = services.NewCardService(cardRepo, colRepo, deckRepo, noteRepo)
+	api.ColService = services.NewColService(colRepo)
+	return api
+}
+
 // GetClient implements api.Api
 func (*SqliteApi) GetClient() *http.Client {
 	panic("Expecting RestApi but got SqliteApi")
@@ -39,7 +53,8 @@ func (*SqliteApi) GetDeckConfig(name string) (models.DeckConfig, error) {
 }
 
 // GetDecks implements api.Api
-func (*SqliteApi) GetDecks(qs string) (models.Decks, error) {
+func (a *SqliteApi) Decks(qs string, includeStats bool) (models.Decks, error) {
+
 	panic("unimplemented")
 }
 
@@ -66,20 +81,6 @@ func (*SqliteApi) RenameDeck(nameOrId string, newName string) (models.Deck, erro
 // UpdateDeckConfig implements api.Api
 func (*SqliteApi) UpdateDeckConfig(config models.DeckConfig, id string) (models.DeckConfig, error) {
 	panic("unimplemented")
-}
-
-func NewApi(config *config.Config) api.Api {
-	api := &SqliteApi{
-		Config: config,
-	}
-	db := sqlx.MustConnect(strings.ToLower(config.DB.Driver), config.DB.Path)
-	cardRepo := repos.NewCardRepository(db)
-	colRepo := repos.NewColRepository(db)
-	deckRepo := repos.NewDeckRepository(db)
-	noteRepo := repos.NewNoteRepository(db)
-	api.CardService = services.NewCardService(cardRepo, colRepo, deckRepo, noteRepo)
-	api.ColService = services.NewColService(colRepo)
-	return api
 }
 
 func (a SqliteApi) GetAllDeckConfigs() (deckConfigs models.DeckConfigs, err error) {

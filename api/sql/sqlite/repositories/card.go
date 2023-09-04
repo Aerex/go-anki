@@ -20,6 +20,9 @@ type CardRepo interface {
 	Create(card models.Card) (err error)
 	WithTrans(trans interface{}) CardRepo
 	MustCreateTrans() *sqlx.Tx
+	CardsDueForDeck(deckId int64, due int64, limit int) (count int64, err error)
+	CardsLearnedForDeck(deckId int64, due int64, limit int) (count int64, err error)
+	CardsNewForDeck(deckId int64, limit int) (count int64, err error)
 }
 
 func NewCardRepository(conn *sqlx.DB) CardRepo {
@@ -87,8 +90,53 @@ func (c cardRepo) Exists(cardId int64) (err error, exists bool) {
 	return
 }
 
-func (c cardRepo) Create(card models.Card) (err error) {
+func (c cardRepo) CardsDueForDeck(deckId int64, due int64, limit int) (count int64, err error) {
+	query := `SELECT COUNT() FROM (SELECT 1 FROM cards WHERE did = ? AND queue = 2
+    AND due <= ?`
+	if limit != 0 {
+		query = query + " LIMIT " + string(limit) + ")"
+	} else {
+		query = query + ")"
+	}
+	row := c.Conn.QueryRow(query, deckId, due)
+	err = row.Scan(&count)
+	if err != nil {
+		return
+	}
+	return
+}
 
+func (c cardRepo) CardsNewForDeck(deckId int64, limit int) (count int64, err error) {
+	query := `SELECT COUNT() FROM (SELECT 1 FROM cards WHERE did = ? AND queue = 0`
+	if limit != 0 {
+		query = query + " LIMIT " + string(limit) + ")"
+	} else {
+		query = query + ")"
+	}
+	row := c.Conn.QueryRow(query, deckId)
+	err = row.Scan(&count)
+	if err != nil {
+		return
+	}
+	return
+}
+
+func (c cardRepo) CardsLearnedForDeck(deckId int64, due int64, limit int) (count int64, err error) {
+	query := `SELECT SUM(left/1000) FROM (SELECT left FROM cards WHERE did = ? AND queue = 1 AND due < ?`
+	if limit != 0 {
+		query = query + " LIMIT " + string(limit) + ")"
+	} else {
+		query = query + ")"
+	}
+	row := c.Conn.QueryRow(query, deckId, due)
+	err = row.Scan(&count)
+	if err != nil {
+		return
+	}
+	return
+}
+
+func (c cardRepo) Create(card models.Card) (err error) {
 	query := `INSERT OR REPLACE INTO cards (nid, did, ord, mod, usn, type, queue, due, ivl, factor, reps, lapses, left, odue, odid, flags, data) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?, "")`
 	if c.Tx != nil {
 		if _, err = c.Tx.Exec(query, card.NoteID, card.DeckID, card.Ord, card.Mod, card.USN, card.Type, card.Queue,

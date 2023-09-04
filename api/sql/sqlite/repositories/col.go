@@ -14,6 +14,7 @@ type colRepo struct {
 
 type ColRepo interface {
 	Conf() (conf models.CollectionConf, err error)
+	CreatedTime() (crt models.UnixTime, err error)
 	NextDue() (due int64, err error)
 	DeckConf(deckId models.ID) (deckConf models.DeckConfig, err error)
 	SchedToday() int64
@@ -27,6 +28,14 @@ func NewColRepository(conn *sqlx.DB) ColRepo {
 	return colRepo{
 		Conn: conn,
 	}
+}
+
+func (c colRepo) CreatedTime() (crt models.UnixTime, err error) {
+	query := `SELECT crt FROM col`
+	if err = c.Conn.Get(&crt, query); err != nil {
+		return
+	}
+	return
 }
 
 func (c colRepo) Conf() (conf models.CollectionConf, err error) {
@@ -80,7 +89,7 @@ func (c colRepo) Rollover() int {
 }
 
 func (c colRepo) SchedToday() int64 {
-	query := `select crt from col`
+	query := `SELECT crt FROM col`
 	var crt int64
 	if err := c.Conn.Select(crt, query); err != nil {
 		return time.Now().Unix()

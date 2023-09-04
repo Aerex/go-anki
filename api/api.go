@@ -21,15 +21,17 @@ const (
 type Api interface {
 
 	// Get list of decks from a collection and filter list if query string is provided
+	// optionally include stats
 	// Support simple search and regex expression
 	// See https://docs.ankiweb.net/searching.html#simple-searches
 	// See https://docs.ankiweb.net/searching.html#regular-expressions
-	GetDecks(qs string) (models.Decks, error)
+	Decks(qs string, includeStats bool) (models.Decks, error)
 	// Get http client used in api. Useful for mocking http client in test
 	GetClient() *http.Client
+	// TODO: Reimplemented StudiedStats method based on Stats class in AnkiDroid or Anki Desktop
 	// Get the number of cards studied and the amount of time studied (in seconds) for a collectionin seo
 	// Result can be filter by the provided query string. See GetDecks for more example usage
-	GetStudiedStats(filter string) (models.CollectionStats, error)
+	//GetStudiedStats(filter string) (models.CollectionStats, error)
 	// Rename the deck using its ID or name
 	RenameDeck(nameOrId string, newName string) (models.Deck, error)
 	// Create a deck

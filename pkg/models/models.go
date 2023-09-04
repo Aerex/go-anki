@@ -225,7 +225,13 @@ type DataWithMeta struct {
 
 // The strutucture representing sta
 type Stats struct {
-	StudiedToday `json:"studiedToday"`
+	StudiedToday StudiedToday `json:"studiedToday"`
+	MaturedToday MaturedToday `json:"maturedToday"`
+}
+
+type MaturedToday struct {
+	MaturedCards int `db:"mcount"`
+	CorrectCards int `db:"mcorrect"`
 }
 
 // The structure representing the stats studied today
@@ -312,6 +318,14 @@ type CollectionConf struct {
 	// (This is useful to ensure that cards are seen in order in which they are added.,
 	NextPos     int `json:"nextPos"`
 	CurrentDeck ID  `json:"curDeck"`
+	// Preferences >Basic > Learn ahead limit'*60.
+	// If there is no more card to review now but next card in learning is in less than collapseTime second, show it now.
+	// If there are no other card to review, then we can review cards in learning in advance if they are due in less than this number of seconds."
+	CollapseTime   int    `json:"collapseTime"`
+	CreationOffset int32  `json:"creationOffset"`
+	LocalOffset    int32  `json:"localOffset"`
+	Rollover       int8   `json:"rollover"`
+	LastUnburied   uint32 `json:"lastUnburied"`
 }
 
 // Structure for deck
@@ -335,9 +349,9 @@ type Deck struct {
 	BrowserCollapsed bool `json:"browserCollapsed"`
 	// The number of days that have passed between the collection was created and the deck was last updated from today
 	// First number is always 0
-	NewToday    [2]int `json:"newToday" db:"newToday"`
-	RevewsToday [2]int `json:"revToday" db:"revToday"`
-	LearnToday  [2]int `json:"lrnToday" db:"lrnToday"`
+	NewToday     [2]uint32 `json:"newToday" db:"newToday"`
+	ReviewsToday [2]uint32 `json:"revToday" db:"revToday"`
+	LearnToday   [2]uint32 `json:"lrnToday" db:"lrnToday"`
 	// True if deck is dynamic (AKA filtered)
 	// TODO: Create a type that interprets 0/1 as bool
 	Dyn BoolVar `json:"dyn" db:"dyn"`
@@ -443,4 +457,9 @@ type DeckConfig struct {
 	// value of -1 indicates changes that need to be pushed to server.
 	// usn < server usn indicates changes that need to be pulled from server.
 	USN int `json:"usn"`
+}
+
+type SchedTimingToday struct {
+	DaysElapsed uint32
+	NextDayAt   int64
 }
