@@ -195,18 +195,20 @@ const (
 	CardTypeNew CardType = iota
 	CardTypeLearning
 	CardTypeReview
+	CardTypeRelearning
 )
 
 type CardQue int
 
 const (
-	CardQueueSBuried    CardQue = -3
-	CardQueueBuried     CardQue = -2
+	CardQueueBuried     CardQue = -3
+	CardQueueSBuried    CardQue = -2
 	CardQueueSuspended  CardQue = -1
 	CardQueueNew        CardQue = 0
 	CardQueueLearning   CardQue = 1
 	CardQueueReview     CardQue = 2
 	CardQueueRelearning CardQue = 3
+	CardQueuePreview    CardQue = 4
 )
 
 // Structure for schedule
@@ -221,6 +223,15 @@ type DeckSchedule struct {
 type DataWithMeta struct {
 	Data []struct{}
 	Meta struct{}
+}
+
+type DeckStudyStats struct {
+	// The number of new cards
+	New int `json:"new"`
+	// The number of reviewed cards
+	Review int `json:"review"`
+	// The number of learning cards
+	Learning int `json:"learning"`
 }
 
 // The strutucture representing sta
@@ -312,6 +323,14 @@ type ReviewLog struct {
 	Type         int
 }
 
+type NewCardSpread int
+
+const (
+	NewCardsDistribute int = iota
+	NewCardsLast
+	NewCardsFirst
+)
+
 type CollectionConf struct {
 	// This is the highest value of a due value of a new card.
 	// It allows to decide the due number to give to the next note created.
@@ -321,11 +340,13 @@ type CollectionConf struct {
 	// Preferences >Basic > Learn ahead limit'*60.
 	// If there is no more card to review now but next card in learning is in less than collapseTime second, show it now.
 	// If there are no other card to review, then we can review cards in learning in advance if they are due in less than this number of seconds."
-	CollapseTime   int    `json:"collapseTime"`
-	CreationOffset int32  `json:"creationOffset"`
-	LocalOffset    int32  `json:"localOffset"`
-	Rollover       int8   `json:"rollover"`
-	LastUnburied   uint32 `json:"lastUnburied"`
+	CollapseTime   int64         `json:"collapseTime"`
+	CreationOffset int32         `json:"creationOffset"`
+	LocalOffset    int32         `json:"localOffset"`
+	Rollover       int8          `json:"rollover"`
+	LastUnburied   uint32        `json:"lastUnburied"`
+	ActiveDecks    []ID          `json:"activeDecks"`
+	NewSpread      NewCardSpread `json:"newSpread"`
 }
 
 // Structure for deck
@@ -353,7 +374,6 @@ type Deck struct {
 	ReviewsToday [2]uint32 `json:"revToday" db:"revToday"`
 	LearnToday   [2]uint32 `json:"lrnToday" db:"lrnToday"`
 	// True if deck is dynamic (AKA filtered)
-	// TODO: Create a type that interprets 0/1 as bool
 	Dyn BoolVar `json:"dyn" db:"dyn"`
 	// Id of option group from the deck. 0 if the deck is dynamic
 	Conf int `json:"conf" db:"conf"`
@@ -393,8 +413,8 @@ type DeckConfig struct {
 	ID ID `json:"id"`
 	// Whether the audio associated to a question should be
 	Autoplay bool `json:"autoplay"`
-	// Whether this deck is dynamic. Not present by default in decks.py
-	Dyn bool `json:"dyn"`
+	// Whether this deck is dynamic.
+	Dyn BoolVar `json:"dyn" db:"dyn"`
 	// The deck's ID
 	DeckId int `json:"deckId"`
 	// The configuration for lapse cards.
