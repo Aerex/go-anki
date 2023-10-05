@@ -9,6 +9,7 @@ import (
 
 	"github.com/aerex/go-anki/api"
 	"github.com/aerex/go-anki/api/sql/sqlite/services"
+	schedv2 "github.com/aerex/go-anki/api/sql/sqlite/services/sched/v2"
 	"github.com/aerex/go-anki/internal/config"
 	fanki "github.com/flimzy/anki"
 	"github.com/jmoiron/sqlx"
@@ -22,10 +23,11 @@ func init() {
 }
 
 type SqliteApi struct {
-	Config      *config.Config
-	CardService services.CardService
-	ColService  services.ColService
-	DeckService services.DeckService
+	Config         *config.Config
+	CardService    services.CardService
+	ColService     services.ColService
+	DeckService    services.DeckService
+	SchedV2Service schedv2.SchedV2Service
 }
 
 func NewApi(config *config.Config) api.Api {
@@ -39,6 +41,10 @@ func NewApi(config *config.Config) api.Api {
 	noteRepo := repos.NewNoteRepository(db)
 	api.CardService = services.NewCardService(cardRepo, colRepo, deckRepo, noteRepo)
 	api.ColService = services.NewColService(colRepo)
+	api.DeckService = services.NewDeckService(deckRepo, colRepo)
+	// TODO: Figure out how to handle the server property
+	// @see third parameter in NewSchedService method
+	api.SchedV2Service = schedv2.NewSchedService(colRepo, cardRepo, deckRepo, true)
 	return api
 }
 
@@ -52,10 +58,19 @@ func (*SqliteApi) GetDeckConfig(name string) (models.DeckConfig, error) {
 	panic("unimplemented")
 }
 
-// GetDecks implements api.Api
-func (a *SqliteApi) Decks(qs string, includeStats bool) (models.Decks, error) {
+// Decks implements api.Api
+func (a *SqliteApi) Decks(qs string, includeStats bool) ([]*models.Deck, error) {
+	return a.DeckService.List()
+}
 
-	panic("unimplemented")
+func (a *SqliteApi) DeckStudyStats() (stats map[models.ID]models.DeckStudyStats, err error) {
+	return a.SchedV2Service.DeckStudyStats()
+	//switch a.Config.SchedulerVersion {
+	//case 2:
+	//	return a.SchedV2Service.DeckStudyStats()
+	//default:
+	//}
+	//return
 }
 
 // GetModel implements api.Api

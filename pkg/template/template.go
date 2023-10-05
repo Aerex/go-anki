@@ -197,6 +197,14 @@ func CustomFuncMaps() template.FuncMap {
 			}
 			return string(yamlData), nil
 		},
+		"loop": func(count int) []int {
+			var i int
+			var items []int
+			for i = 0; i < (count); i++ {
+				items = append(items, i)
+			}
+			return items
+		},
 		"date": func(fmt string, content interface{}) (string, error) {
 			return dateInZone(fmt, content, "Local")
 		},

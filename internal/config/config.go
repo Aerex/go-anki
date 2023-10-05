@@ -37,7 +37,7 @@ type ColorConfig struct {
 
 type DBConfig struct {
 	// the database driver (ie: sqlite3)
-	Driver string `yaml:"db.driver"`
+	Driver string `yaml:"db.driver" toml:"general.type"`
 	// location of db
 	Path string `yaml:"db.path"`
 }
@@ -46,6 +46,10 @@ type Config struct {
 	Type string `yaml:"type"`
 	// (Optional) the location of the database. If set TYPE must be set as DB
 	DB DBConfig `yaml:"db,omitempty"`
+	// SchedulerVersion sets the the scheduler version to use when syncing. Options are 2 or 3
+	// @see https://faqs.ankiweb.net/the-anki-2.1-scheduler.html and https://faqs.ankiweb.net/the-2021-scheduler.html
+	// for informtation on compatibility
+	SchedulerVersion int `yaml:"sched" toml:"general.sched"`
 	// The path of for the editor that will be launched when editing content (ie: vim or notepad)
 	// Default will use the editor set by the EDITOR or ANKICLI_EDITOR environment variable
 	Editor string `yaml:"editor"`

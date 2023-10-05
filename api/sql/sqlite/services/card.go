@@ -154,24 +154,12 @@ func (c *CardService) Create(card models.Card, note models.Note, noteType models
 	if note.Mod == 0 {
 		note.Mod = card.Mod
 	}
-	// REMOVEME: Do not commit
-	fmt.Println("\n158")
-	tx := c.noteRepo.MustCreateTrans()
-	if createNoteErr := c.noteRepo.WithTrans(tx).Create(note); createNoteErr != nil {
+	if createNoteErr := c.noteRepo.Create(note); createNoteErr != nil {
 		return createNoteErr
 	}
 
-	// REMOVEME: Do not commit
-	fmt.Println("\n165")
-	if createCardErr := c.cardRepo.WithTrans(tx).Create(card); createCardErr != nil {
+	if createCardErr := c.cardRepo.Create(card); createCardErr != nil {
 		return createCardErr
-	}
-
-	if txErr := tx.Commit(); txErr != nil {
-		if rollbackErr := tx.Rollback(); rollbackErr != nil {
-			return rollbackErr
-		}
-		return txErr
 	}
 	return nil
 }

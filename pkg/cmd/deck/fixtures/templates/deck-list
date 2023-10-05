@@ -1,5 +1,6 @@
 {{- table -}}
-{{- headers "Name" "Due" "Next" -}} {{- range .Data -}}
-{{- row .Name .Schedule.Due .Schedule.Next | toString -}}{{- end -}}{{- endtable -}}
+{{- headers "Name" "Learning" "Review" "New" -}} {{- range $index, $deck := .Data -}}
+{{- row $deck.Name .Meta[$index].Learning .Meta[$index].Review .Meta[$index].New }}
+{{- end -}}{{- endtable -}}
 
-Studied {{ .Meta.Stats.StudiedToday.Cards }} cards in {{ .Meta.Stats.StudiedToday.Time }} seconds
+{{/* Studied {{ .Meta.Stats.StudiedToday.Cards }} cards in {{ .Meta.Stats.StudiedToday.Time }} seconds -}}

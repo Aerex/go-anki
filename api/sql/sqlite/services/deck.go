@@ -1,7 +1,10 @@
 package services
 
 import (
+	"sort"
 	"time"
+
+	"golang.org/x/exp/maps"
 
 	repos "github.com/aerex/go-anki/api/sql/sqlite/repositories"
 	"github.com/aerex/go-anki/pkg/models"
@@ -26,6 +29,17 @@ func (d *DeckService) fetchNewId(decks models.Decks) (id time.Time) {
 			break
 		}
 	}
+	return
+}
+
+func (d *DeckService) List() (decks []*models.Deck, err error) {
+	var decksMap models.Decks
+	decksMap, err = d.deckRepo.Decks()
+	if err != nil {
+		return
+	}
+	decks = maps.Values(decksMap)
+	sort.Sort(repos.ByDeckName(decks))
 	return
 }
 

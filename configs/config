@@ -1,4 +1,5 @@
 type: db
+sVer: 2
 db: 
   driver: sqlite3
   storage_path: ~/.anki/User 1/

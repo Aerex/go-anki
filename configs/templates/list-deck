@@ -1,6 +1,9 @@
+{{/* Variables */}}
+{{- $len := (.Data | len) }} 
+{{/* Deck List Table */}}
 {{- table -}}
-{{- headers "Name" "Due" "Next" -}} {{- range .Data -}}
-{{- row .Name .Schedule.Due .Schedule.Next | toString -}}
+{{- headers "Name" "Leahrning" "Review" "New" -}} {{- range $index := loop $len -}}
+{{- row (index $.Data $index ).Name (index $.Meta $index).Learning (index $.Meta $index).Review (index $.Meta $index).New }}
 {{- end -}}{{- endtable -}}
 
-Studied {{ .Meta.Stats.StudiedToday.Cards }} cards in {{ .Meta.Stats.StudiedToday.Time }} seconds
+{{/* Studied {{ .Meta.Stats.StudiedToday.Cards }} cards in {{ .Meta.Stats.StudiedToday.Time }} seconds - */}}

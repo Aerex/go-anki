@@ -1,19 +1,22 @@
 package repositories
 
 import (
+	"fmt"
 	"time"
 
+	ankisql "github.com/aerex/go-anki/api/sql"
 	"github.com/aerex/go-anki/pkg/models"
 	"github.com/jmoiron/sqlx"
 )
 
 type colRepo struct {
 	Conn *sqlx.DB
-	Tx   *sqlx.Tx
+	Tx   ankisql.TxOpts
 }
 
 type ColRepo interface {
 	Conf() (conf models.CollectionConf, err error)
+	UpdateMod() (err error)
 	CreatedTime() (crt models.UnixTime, err error)
 	NextDue() (due int64, err error)
 	DeckConf(deckId models.ID) (deckConf models.DeckConfig, err error)
@@ -27,7 +30,19 @@ type ColRepo interface {
 func NewColRepository(conn *sqlx.DB) ColRepo {
 	return colRepo{
 		Conn: conn,
+		Tx: ankisql.TxOpts{
+			DB: conn,
+		},
 	}
+}
+func (c colRepo) UpdateMod() (err error) {
+	return ankisql.Tx(c.Tx, func(tx *sqlx.Tx) error {
+		query := fmt.Sprintf("UPDATE col SET mod = %d WHERE ID = 1", time.Now().Unix())
+		if _, err := tx.Exec(query); err != nil {
+			return err
+		}
+		return nil
+	})
 }
 
 func (c colRepo) CreatedTime() (crt models.UnixTime, err error) {
@@ -61,8 +76,9 @@ func (c colRepo) NextDue() (due int64, err error) {
 
 func (c colRepo) DeckConf(deckId models.ID) (deckConf models.DeckConfig, err error) {
 	var deckConfs models.DeckConfigs
-	query := `SELECT dconf FROM col`
-	if err = c.Conn.Select(&deckConfs, query); err != nil {
+	query := "SELECT dconf FROM col LIMIT 1"
+	if err = c.Conn.QueryRowx(query).Scan(&deckConfs); err != nil {
+		fmt.Printf("query: %s", err.Error())
 		return
 	}
 	deckConf = *deckConfs[deckId]

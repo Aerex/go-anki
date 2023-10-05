@@ -70,9 +70,9 @@ func NewApi(config *config.Config) api.Api {
 //  return req.Get(url)
 //}
 
-func (a RestApi) Decks(qs string, includeStats bool) (models.Decks, error) {
+func (a RestApi) Decks(qs string, includeStats bool) ([]*models.Deck, error) {
 	if a.Config.Endpoint != "" {
-		decks := &models.Decks{}
+		decks := []*models.Deck{}
 		req := a.Client.R()
 		req.SetResult(decks)
 		if qs != "" {
@@ -80,13 +80,13 @@ func (a RestApi) Decks(qs string, includeStats bool) (models.Decks, error) {
 		}
 		_, err := req.Get(DECKS_URI)
 		if err != nil {
-			return models.Decks{}, err
+			return []*models.Deck{}, err
 		}
-		return *decks, nil
+		return decks, nil
 	}
 	// TODO: Need to move this to an error module or something
 	// Same thing on line 66
-	return models.Decks{}, errors.New("could not get decks")
+	return []*models.Deck{}, errors.New("could not get decks")
 }
 
 func (a RestApi) GetClient() *http.Client {
@@ -251,6 +251,10 @@ func (a RestApi) CreateCard(note models.Note, mdl models.NoteType, deckName stri
 		return createdCard, nil
 	}
 	return models.Card{}, errors.New("could not create card")
+}
+
+func (a RestApi) DeckStudyStats() (stats map[models.ID]models.DeckStudyStats, err error) {
+	panic("unimplemented")
 }
 
 func (a RestApi) GetModels(name string) (models.NoteTypes, error) {

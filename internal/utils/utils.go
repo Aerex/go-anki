@@ -5,6 +5,7 @@ import (
 	"crypto/sha1"
 	"encoding/base64"
 	"encoding/hex"
+	"encoding/json"
 	"html"
 	"io"
 	"path/filepath"
@@ -96,16 +97,29 @@ func FieldChecksum(data string) string {
 	return hex.EncodeToString(h.Sum(nil))
 }
 
-func ArrayStringContains(item string, items []string) bool {
-	for _, v := range items {
-		if v == item {
+func CurrentModuleDir() string {
+	_, fileName, _, _ := runtime.Caller(0)
+	return filepath.Join(filepath.Dir(fileName))
+}
+
+func Clone(dst interface{}, src interface{}) error {
+	out, err := json.Marshal(src)
+	if err != nil {
+		return err
+	}
+
+	if err = json.Unmarshal(out, src); err != nil {
+		return err
+	}
+	return nil
+
+}
+
+func MissingParents(deckName string) bool {
+	for _, section := range strings.Split(deckName, "::") {
+		if section == "" {
 			return true
 		}
 	}
 	return false
-}
-
-func CurrentModuleDir() string {
-	_, fileName, _, _ := runtime.Caller(0)
-	return filepath.Join(filepath.Dir(fileName))
 }

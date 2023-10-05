@@ -46,22 +46,26 @@ func listCmd(anki *anki.Anki, opts *ListOptions) error {
 		query = opts.Query
 	}
 
-	decks, err := anki.Api.GetDecks(query)
+	decks, err := anki.Api.Decks(query, false)
 	if err != nil {
 		return err
 	}
 
-	studiedStats, err := anki.Api.GetStudiedStats(query)
+	statsByDeck, err := anki.Api.DeckStudyStats()
 	if err != nil {
 		return err
+	}
+	stats := []models.DeckStudyStats{}
+	for _, deck := range decks {
+		stats = append(stats, statsByDeck[deck.ID])
 	}
 
 	data := struct {
-		Data models.Decks
-		Meta models.CollectionStats
+		Data []*models.Deck
+		Meta []models.DeckStudyStats
 	}{
 		Data: decks,
-		Meta: studiedStats,
+		Meta: stats,
 	}
 
 	if err := anki.Templates.Execute(data, anki.IO); err != nil {

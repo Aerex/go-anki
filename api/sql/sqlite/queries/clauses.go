@@ -2,6 +2,7 @@ package queries
 
 import (
 	"fmt"
+	"golang.org/x/exp/slices"
 	"math"
 	"regexp"
 	"strconv"
@@ -106,7 +107,7 @@ func (c *clause) deck() string {
 		if err != nil {
 			return ""
 		}
-		ids, err = c.deckRepo.DeckIDs(conf.CurrentDeck)
+		ids, err = c.deckRepo.ChildrenDeckIDs(conf.CurrentDeck)
 		if err != nil {
 			return ""
 		}
@@ -115,7 +116,7 @@ func (c *clause) deck() string {
 		if err != nil {
 			return ""
 		}
-		ids, err = c.deckRepo.DeckIDs(d.ID)
+		ids, err = c.deckRepo.ChildrenDeckIDs(d.ID)
 		if err != nil {
 			return ""
 		}
@@ -125,7 +126,7 @@ func (c *clause) deck() string {
 		if err != nil {
 			return ""
 		}
-		ids, err = c.deckRepo.DeckIDs(d.ID)
+		ids, err = c.deckRepo.ChildrenDeckIDs(d.ID)
 		// create a map to ref deck IDs
 		var idsMap map[models.ID]bool
 		for _, id := range ids {
@@ -142,7 +143,7 @@ func (c *clause) deck() string {
 				}
 				reg := regexp.MustCompile("(?i)" + c.val)
 				if reg.MatchString(deckName) {
-					matchingIds, err := c.deckRepo.DeckIDs(d.ID)
+					matchingIds, err := c.deckRepo.ChildrenDeckIDs(d.ID)
 					if err != nil {
 						return ""
 					}
@@ -276,7 +277,7 @@ func (c *clause) prop() string {
 	}
 
 	// validate prop
-	if !utils.ArrayStringContains(prop, VALID_PROPS) {
+	if !slices.Contains(VALID_PROPS, prop) {
 		return ""
 	}
 
@@ -301,7 +302,7 @@ func (c *clause) rated() string {
 	days = int64(math.Min(float64(days), 31))
 	var ease string
 	if len(rates) > 1 {
-		if !utils.ArrayStringContains(rates[1], []string{"1", "2", "3", "4"}) {
+		if !slices.Contains([]string{"1", "2", "3", "4"}, rates[1]) {
 			return ""
 		}
 		ease = fmt.Sprintf("and ease=%s", rates[1])

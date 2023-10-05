@@ -19,13 +19,14 @@ const (
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 . Api
 // Method definitions for interacting with the anki api
 type Api interface {
-
+	// DeckStudyStats provides stats for the number of new/reviewed/learning cards per deck
+	DeckStudyStats() (stats map[models.ID]models.DeckStudyStats, err error)
 	// Get list of decks from a collection and filter list if query string is provided
 	// optionally include stats
 	// Support simple search and regex expression
 	// See https://docs.ankiweb.net/searching.html#simple-searches
 	// See https://docs.ankiweb.net/searching.html#regular-expressions
-	Decks(qs string, includeStats bool) (models.Decks, error)
+	Decks(qs string, includeStats bool) ([]*models.Deck, error)
 	// Get http client used in api. Useful for mocking http client in test
 	GetClient() *http.Client
 	// TODO: Reimplemented StudiedStats method based on Stats class in AnkiDroid or Anki Desktop

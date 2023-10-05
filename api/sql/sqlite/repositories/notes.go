@@ -8,12 +8,13 @@ import (
 	"github.com/aerex/go-anki/pkg/models"
 	fanki "github.com/flimzy/anki"
 
+	ankisql "github.com/aerex/go-anki/api/sql"
 	"github.com/jmoiron/sqlx"
 )
 
 type noteRepo struct {
 	Conn *sqlx.DB
-	Tx   *sqlx.Tx
+	Tx   ankisql.TxOpts
 }
 
 type NoteRepo interface {
@@ -22,13 +23,14 @@ type NoteRepo interface {
 	FindById(id string) (note fanki.Note, err error)
 	Create(note models.Note) (err error)
 	Exists(id models.ID, stringTags string, fields string) (err error, exists bool)
-	WithTrans(trans interface{}) NoteRepo
-	MustCreateTrans() *sqlx.Tx
 }
 
 func NewNoteRepository(conn *sqlx.DB) NoteRepo {
 	return noteRepo{
 		Conn: conn,
+		Tx: ankisql.TxOpts{
+			DB: conn,
+		},
 	}
 }
 
@@ -71,26 +73,13 @@ func (n noteRepo) Exists(id models.ID, stringTags string, fields string) (err er
 }
 
 func (n noteRepo) Create(note models.Note) (err error) {
-	query := `INSERT OR REPLACE INTO notes (id, guid, mid, mod, usn, tags, flds, sfld, csum, flags, data)
+	return ankisql.Tx(n.Tx, func(tx *sqlx.Tx) error {
+		query := `INSERT OR REPLACE INTO notes (id, guid, mid, mod, usn, tags, flds, sfld, csum, flags, data)
     VALUES (?,?,?,?,?,?,?,?,?,?, "")`
-	if n.Tx != nil {
-		if _, err = n.Tx.Exec(query, note.ID, note.GUID, note.ModelID, note.Mod,
+		if _, err := tx.Exec(query, note.ID, note.GUID, note.ModelID, note.Mod,
 			note.USN, note.StringTags, note.Fields, note.SortField, note.Checksum, note.Flags); err != nil {
-			return
+			return err
 		}
-		return
-	}
-	if _, err = n.Conn.NamedExec(query, note); err != nil {
-		return
-	}
-	return
-}
-
-func (n noteRepo) WithTrans(trans interface{}) NoteRepo {
-	n.Tx = trans.(*sqlx.Tx)
-	return n
-}
-
-func (n noteRepo) MustCreateTrans() *sqlx.Tx {
-	return n.Conn.MustBegin()
+		return nil
+	})
 }
