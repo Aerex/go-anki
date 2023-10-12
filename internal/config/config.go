@@ -3,16 +3,15 @@ package config
 import (
 	"bytes"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"runtime"
 	"strings"
 
-	"github.com/aerex/go-anki/internal/utils"
 	"github.com/aerex/go-anki/pkg/io"
 	"github.com/mitchellh/go-homedir"
+	"github.com/pelletier/go-toml"
 	"github.com/spf13/viper"
 )
 
@@ -26,47 +25,56 @@ const (
 	EXEC        = "exec"
 )
 
-type LoggerConfig struct {
-	Level  string `yaml:"logger.level"`
-	File   string `yaml:"logger.file"`
-	Format string `yaml:"logger.format"`
-}
-type ColorConfig struct {
-	Hint string `yaml:"color.hint"`
+type Logger struct {
+	Level  string `yaml:"level"`
+	File   string `yaml:"file"`
+	Format string `yaml:"format"`
 }
 
-type DBConfig struct {
-	// the database driver (ie: sqlite3)
-	Driver string `yaml:"db.driver" toml:"general.type"`
-	// location of db
-	Path string `yaml:"db.path"`
+type Color struct {
+	Hint string `yaml:"hint"`
 }
-type Config struct {
-	// Options are `REST`, `DB`
-	Type string `yaml:"type"`
-	// (Optional) the location of the database. If set TYPE must be set as DB
-	DB DBConfig `yaml:"db,omitempty"`
+
+type API struct {
+	User     string `toml:"user"`
+	PassEval string `toml:"pass-cmd,inline"`
+	Pass     string `toml:"pass,omitempty"`
+	// The URL to retrieve data from backend.
+	Endpoint string `toml:"endpoint" comment:"URL to retrieve data from backend"`
+}
+
+type General struct {
+	// Options are `REST` and `DB`
+	Type string `yaml:"type" mapstructure:"type" comment:"Options are REST and DB"`
 	// SchedulerVersion sets the the scheduler version to use when syncing. Options are 2 or 3
 	// @see https://faqs.ankiweb.net/the-anki-2.1-scheduler.html and https://faqs.ankiweb.net/the-2021-scheduler.html
-	// for informtation on compatibility
-	SchedulerVersion int `yaml:"sched" toml:"general.sched"`
+	// for information on compatibility
+	SchedulerVersion int `yaml:"sched" mapstructure:"sched" comment:"Sets the scheduler version to use when syncing. Options are 2 or 3"`
 	// The path of for the editor that will be launched when editing content (ie: vim or notepad)
 	// Default will use the editor set by the EDITOR or ANKICLI_EDITOR environment variable
-	Editor string `yaml:"editor"`
-	// The URL to retrieve data from backend. If BackendType is `REST`
-	Endpoint string `yaml:"endpoint"`
+	Editor string `yaml:"editor" toml:"editor" comment:"The path of for the editor that will be launched when editing content (ie: vim or notepad)"`
+}
+
+type DB struct {
+	// the database driver (ie: sqlite3)
+	Driver string `toml:"driver" comment:"the database driver (ie: sqlite3)"`
+	// location of database file
+	File string `yaml:"file" toml:"file" comment:"location of database file"`
+}
+type Config struct {
+	// (Optional) the location of the database. If set TYPE must be set as DB
+	DB DB `yaml:"db,omitempty" toml:"db" comment:"the location of the database. If set TYPE must be set as DB"`
 	// The username credential to access backend
-	User     string       `yaml:"user"`
-	PassEval string       `mapstructure:"passEval"`
-	Pass     string       `yaml:"pass"`
-	Logger   LoggerConfig `yaml:"logger"`
-	Dir      string
-	Color    ColorConfig `yaml:"color,omitempty"`
+	Logger  Logger  `yaml:"logger" toml:"logger"`
+	API     API     `toml:"api" toml:"api"`
+	General General `toml:"general"`
+	Color   Color   `yaml:"color,omitempty" toml:"color"`
+	Dir     string
 }
 
 func init() {
 	viper.SetConfigName("config")
-	viper.SetConfigType("yaml")
+	viper.SetConfigType("toml")
 	viper.SetEnvPrefix("ankicli")
 }
 
@@ -83,7 +91,6 @@ func LoadSampleConfig() (Config, error) {
 		fmt.Println("Failed to load config")
 		return cfg, err
 	}
-
 	return cfg, nil
 }
 
@@ -93,7 +100,7 @@ func LoadSampleConfig() (Config, error) {
 // 3. env XDG_CONFIG_HOME
 // 4. $XDG_CONFIG_HOME/anki-cli
 // 5. AppData/anki-cli (Windows only)
-// 6.  $HOME/.anki-cli
+// 6. $HOME/.anki-cli
 func Load(configPath string, config *Config, io *io.IO) error {
 	if configPath != "" {
 		viper.AddConfigPath(configPath)
@@ -122,29 +129,29 @@ func Load(configPath string, config *Config, io *io.IO) error {
 		return erru
 	}
 
-	if config.PassEval != "" {
+	if config.API.PassEval != "" {
 		buf := bytes.NewBufferString("")
-		err := io.Eval(config.PassEval, buf)
+		err := io.Eval(config.API.PassEval, buf)
 		if err != nil {
 			return err
 		}
-		config.Pass = strings.Replace(buf.String(), "\n", "", 1)
+		config.API.Pass = strings.Replace(buf.String(), "\n", "", 1)
 	}
 
 	// Remove trailing / from endpoint if there is one
-	if config.Endpoint != "" {
-		lastCharIdx := strings.LastIndex(config.Endpoint, "/")
-		if config.Endpoint[lastCharIdx:] == "/" && len(config.Endpoint) == lastCharIdx+1 {
-			config.Endpoint = config.Endpoint[0:lastCharIdx]
+	if config.API.Endpoint != "" {
+		lastCharIdx := strings.LastIndex(config.API.Endpoint, "/")
+		if config.API.Endpoint[lastCharIdx:] == "/" && len(config.API.Endpoint) == lastCharIdx+1 {
+			config.API.Endpoint = config.API.Endpoint[0:lastCharIdx]
 		}
 	}
 
-	if config.DB.Path != "" {
-		expandedPath, err := homedir.Expand(config.DB.Path)
+	if config.DB.File != "" {
+		expandedPath, err := homedir.Expand(config.DB.File)
 		if err != nil {
 			return err
 		}
-		config.DB.Path = expandedPath
+		config.DB.File = expandedPath
 	}
 
 	// Retrieve config file path from absolute file path
@@ -181,15 +188,13 @@ func GenerateSampleConfig(config *Config, io *io.IO) (string, error) {
 		os.Mkdir(configDir, 0700)
 	}
 
-	moduleDir := utils.CurrentModuleDir()
-
-	// Copy over sample config to configuration directory
-	sampleConfigFile, err := ioutil.ReadFile(filepath.Join(moduleDir, "../../configs/config"))
+	out, err := toml.Marshal(config)
 	if err != nil {
 		return "", err
 	}
+
 	configFilePath := filepath.Join(configDir, "config")
-	err = ioutil.WriteFile(configFilePath, sampleConfigFile, 0700)
+	err = os.WriteFile(configFilePath, out, 0700)
 	if err != nil {
 		return "", err
 	}

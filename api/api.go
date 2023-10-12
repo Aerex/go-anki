@@ -13,7 +13,7 @@ const (
 	PLAIN   = "PLAIN"
 	REST    = "REST"
 	SQLITE3 = "SQLITE3"
-	DB      = "DB"
+	DB      = "db"
 )
 
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 . Api
@@ -61,7 +61,7 @@ type ApiConfig struct {
 
 // Called to create or find the api client based on the configured backend
 func NewApi(config *config.Config) Api {
-	api := ApiConfigs[config.Type]
+	api := ApiConfigs[config.General.Type]
 
 	return api.NewApi(config)
 }

@@ -34,7 +34,7 @@ func NewApi(config *config.Config) api.Api {
 	api := &SqliteApi{
 		Config: config,
 	}
-	db := sqlx.MustConnect(strings.ToLower(config.DB.Driver), config.DB.Path)
+	db := sqlx.MustConnect(strings.ToLower(config.DB.Driver), config.DB.File)
 	cardRepo := repos.NewCardRepository(db)
 	colRepo := repos.NewColRepository(db)
 	deckRepo := repos.NewDeckRepository(db)

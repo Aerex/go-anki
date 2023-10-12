@@ -52,9 +52,9 @@ func NewApi(config *config.Config) api.Api {
 		Client: resty.New(),
 		Config: config,
 	}
-	api.Client.SetBasicAuth(config.User, config.Pass)
+	api.Client.SetBasicAuth(config.API.User, config.API.Pass)
 	api.Client.SetHeader("Content-Type", "application/json")
-	api.Client.SetHostURL(config.Endpoint)
+	api.Client.SetHostURL(config.API.Endpoint)
 	return api
 }
 
@@ -71,7 +71,7 @@ func NewApi(config *config.Config) api.Api {
 //}
 
 func (a RestApi) Decks(qs string, includeStats bool) ([]*models.Deck, error) {
-	if a.Config.Endpoint != "" {
+	if a.Config.API.Endpoint != "" {
 		decks := []*models.Deck{}
 		req := a.Client.R()
 		req.SetResult(decks)
@@ -112,7 +112,7 @@ func (a RestApi) GetClient() *http.Client {
 //}
 
 func (a RestApi) RenameDeck(nameOrId, newName string) (models.Deck, error) {
-	if a.Config.Endpoint != "" {
+	if a.Config.API.Endpoint != "" {
 		updatedDeck := &models.Deck{}
 		errorResponse := &ErrorResponse{}
 		req := a.Client.R()
@@ -135,7 +135,7 @@ func (a RestApi) RenameDeck(nameOrId, newName string) (models.Deck, error) {
 }
 
 func (a RestApi) CreateDeck(name string, deckType string) (models.Deck, error) {
-	if a.Config.Endpoint != "" {
+	if a.Config.API.Endpoint != "" {
 		createdDeck := &models.Deck{}
 		errorResponse := &ErrorResponse{}
 		req := a.Client.R()
@@ -167,7 +167,7 @@ func (a RestApi) GetNoteType(name string) (models.NoteType, error) {
 }
 
 func (a RestApi) GetDeckConfig(nameOrId string) (models.DeckConfig, error) {
-	if a.Config.Endpoint != "" {
+	if a.Config.API.Endpoint != "" {
 		deckOptions := &models.DeckConfig{}
 		errorResponse := &ErrorResponse{}
 		req := a.Client.R()
@@ -189,7 +189,7 @@ func (a RestApi) GetDeckConfig(nameOrId string) (models.DeckConfig, error) {
 }
 
 func (a RestApi) UpdateDeckConfig(deckConfig models.DeckConfig, id string) (models.DeckConfig, error) {
-	if a.Config.Endpoint != "" {
+	if a.Config.API.Endpoint != "" {
 		updatedDeckConfig := &models.DeckConfig{}
 		errorResponse := &ErrorResponse{}
 		req := a.Client.R()
@@ -212,7 +212,7 @@ func (a RestApi) UpdateDeckConfig(deckConfig models.DeckConfig, id string) (mode
 }
 
 func (a RestApi) GetCards(qs string, limit int) ([]models.Card, error) {
-	if a.Config.Endpoint != "" {
+	if a.Config.API.Endpoint != "" {
 		cards := &[]models.Card{}
 		req := a.Client.R()
 		req.SetResult(cards)
@@ -232,7 +232,7 @@ func (a RestApi) GetCards(qs string, limit int) ([]models.Card, error) {
 }
 
 func (a RestApi) CreateCard(note models.Note, mdl models.NoteType, deckName string) (models.Card, error) {
-	if a.Config.Endpoint != "" {
+	if a.Config.API.Endpoint != "" {
 		createdCard := models.Card{
 			Note: models.Note{
 				Model: mdl,
@@ -258,7 +258,7 @@ func (a RestApi) DeckStudyStats() (stats map[models.ID]models.DeckStudyStats, er
 }
 
 func (a RestApi) GetModels(name string) (models.NoteTypes, error) {
-	if a.Config.Endpoint != "" {
+	if a.Config.API.Endpoint != "" {
 		mdls := &models.NoteTypes{}
 		req := a.Client.R()
 		req.SetResult(mdls)
