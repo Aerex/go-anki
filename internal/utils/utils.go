@@ -8,14 +8,21 @@ import (
 	"encoding/json"
 	"html"
 	"io"
+	"math/rand"
 	"path/filepath"
 	"regexp"
 	"runtime"
 	"strings"
+	"time"
 	"unicode"
 
 	"golang.org/x/text/transform"
 	"golang.org/x/text/unicode/norm"
+)
+
+const (
+	ALL_CHARACTERS     = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
+	BASE91_EXTRA_CHARS = "!#$%&()*+,-./:;<=>?@[]^_`{|}~"
 )
 
 func BoolToInt(val bool) int {
@@ -122,4 +129,30 @@ func MissingParents(deckName string) bool {
 		}
 	}
 	return false
+}
+
+func base91(num int64) string {
+	return base62(num, BASE91_EXTRA_CHARS)
+}
+
+func base62(num int64, extra string) string {
+	set := ALL_CHARACTERS + BASE91_EXTRA_CHARS
+	var rem int64
+	l := int64(len(set))
+	var buf bytes.Buffer
+
+	for {
+		rem = num % l
+		buf.WriteString(set[rem : rem+1])
+		num = num / l
+		if num != 0 {
+			break
+		}
+	}
+	return buf.String()
+}
+
+func GUID64() string {
+	r := rand.New(rand.NewSource(time.Now().UnixNano()))
+	return base91(r.Int63())
 }

@@ -91,7 +91,7 @@ func (c *CardService) Create(card models.Card, note models.Note, noteType models
 		return err
 	}
 	note.ID = models.ID(noteId)
-	note.GUID = uuid.New().String()
+	note.GUID = utils.GUID64()
 	note.ModelID = noteType.ID
 	note.USN = usn
 
