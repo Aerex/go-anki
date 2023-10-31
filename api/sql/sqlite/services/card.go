@@ -12,7 +12,6 @@ import (
 	repos "github.com/aerex/go-anki/api/sql/sqlite/repositories"
 	"github.com/aerex/go-anki/internal/utils"
 	"github.com/aerex/go-anki/pkg/models"
-	"github.com/google/uuid"
 )
 
 type CardService struct {
@@ -63,8 +62,7 @@ func (c *CardService) Find(qs string) (cards []models.Card, err error) {
 	return
 }
 
-// Create will create a note and attach to new card to the given deck using the provided
-// card type (model)
+// Create will create a note and attach to new card to the given deck using the provided card type (model)
 func (c *CardService) Create(card models.Card, note models.Note, noteType models.NoteType, tmpl models.CardTemplate, deckName string) error {
 	decks, err := c.deckRepo.Decks()
 	var deckId models.ID
@@ -86,7 +84,7 @@ func (c *CardService) Create(card models.Card, note models.Note, noteType models
 		return err
 	}
 
-	usn, err := c.colRepo.USN()
+	usn, err := c.colRepo.USN(false)
 	if err != nil {
 		return err
 	}
@@ -141,9 +139,6 @@ func (c *CardService) Create(card models.Card, note models.Note, noteType models
 
 	card.USN = usn
 
-	// TODO: Insert records into note as well
-	// Abstract create note in another method
-	// see https://github.com/dae/anki/blob/f1734a475db6f821663b3cf187388d05c3bcc846/pylib/anki/notes.py#L85
 	// 2. Check if note exists
 	fields := utils.JoinFields(note.Fields)
 	err, noteExists := c.noteRepo.Exists(note.ID, note.StringTags, fields)
@@ -169,7 +164,7 @@ func (c *CardService) fetchNewId() (models.ID, error) {
 	// continue to check if new card id exists
 	// if so add 1sec and try again
 	for {
-		err, exists := c.cardRepo.Exists(id.Unix())
+		err, exists := c.cardRepo.Exists(id.UnixMilli())
 		if err != nil {
 			return -1, err
 		}
@@ -179,5 +174,5 @@ func (c *CardService) fetchNewId() (models.ID, error) {
 			break
 		}
 	}
-	return models.ID(id.Unix()), nil
+	return models.ID(id.UnixMilli()), nil
 }

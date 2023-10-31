@@ -92,8 +92,6 @@ func JoinFields(fields []string) string {
 }
 
 func FieldChecksum(data string) string {
-
-	//return int(checksum(stripHTMLMedia(data).encode("utf-8"))[:8], 16)
 	// strip html
 	data = StripHTMLMedia(data)
 	// encode in utf8
@@ -145,13 +143,14 @@ func base62(num int64, extra string) string {
 		rem = num % l
 		buf.WriteString(set[rem : rem+1])
 		num = num / l
-		if num != 0 {
+		if num == 0 {
 			break
 		}
 	}
 	return buf.String()
 }
 
+// GUID64 will generate a uuid in a more compact form
 func GUID64() string {
 	r := rand.New(rand.NewSource(time.Now().UnixNano()))
 	return base91(r.Int63())

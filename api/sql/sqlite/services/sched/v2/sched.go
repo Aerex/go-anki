@@ -80,7 +80,7 @@ func (s *SchedV2Service) DeckStudyStats() (map[models.ID]models.DeckStudyStats, 
 	if err = s.colRepo.UpdateMod(); err != nil {
 		return stats, err
 	}
-	usn, err := s.colRepo.USN()
+	usn, err := s.colRepo.USN(s.server)
 	if err != nil {
 		return stats, err
 	}

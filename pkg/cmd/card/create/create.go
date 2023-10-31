@@ -1,16 +1,14 @@
 package create
 
 import (
-	"bytes"
-	"io/ioutil"
 	"strings"
 
+	survey "github.com/AlecAivazis/survey/v2"
 	"github.com/aerex/go-anki/pkg/anki"
 	"github.com/aerex/go-anki/pkg/models"
-	"github.com/aerex/go-anki/pkg/template"
+	"github.com/aerex/go-anki/pkg/ui/prompt"
 	"github.com/op/go-logging"
 	"github.com/spf13/cobra"
-	"gopkg.in/yaml.v2"
 )
 
 var logger = logging.MustGetLogger("ankicli")
@@ -19,7 +17,7 @@ type CreateOptions struct {
 	Type     string
 	Quiet    bool
 	File     string
-	Template string
+	Tags     []string
 	NoEditor bool
 	Deck     string
 	Fields   map[string]string
@@ -29,7 +27,7 @@ func NewCreateCmd(anki *anki.Anki) *cobra.Command {
 	opts := &CreateOptions{}
 
 	cmd := &cobra.Command{
-		Use:                   "create (-t type|Basic) [-f field1 -f field2...] [-d deck|Default]",
+		Use:                   "create [-t type] [-f field1 -f field2...] [-d deck]",
 		DisableFlagsInUseLine: true, // disables [flags] in usage text
 		Short:                 "Create a card",
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -37,96 +35,102 @@ func NewCreateCmd(anki *anki.Anki) *cobra.Command {
 		},
 	}
 
-	cmd.Flags().StringVarP(&opts.Type, "type", "t", "Basic", "The note type")
+	cmd.Flags().StringVarP(&opts.Type, "type", "T", "", "The note type")
 	cmd.Flags().StringVarP(&opts.File, "file", "F", "", "Read card content from file. Use \"-\" for stdin")
-	cmd.Flags().BoolVarP(&opts.Quiet, "quiet", "q", false, "Silence")
-	cmd.Flags().StringVarP(&opts.Deck, "deck", "d", "Default", "The name of the deck the new card will be added to")
-	cmd.Flags().StringVar(&opts.Template, "template", "", "Override template for create a card")
-	cmd.Flags().BoolVar(&opts.NoEditor, "no-edit", false, "Disable using the editor")
+	cmd.Flags().StringVarP(&opts.Deck, "deck", "d", "", "The name of the deck the new card will be added to")
+	cmd.Flags().StringSliceVarP(&opts.Tags, "tags", "t", []string{}, "List of tags on note")
 	cmd.Flags().StringToStringVarP(&opts.Fields, "field", "f", map[string]string{}, "Set the card fields")
 
 	return cmd
 }
 
-func createCmd(anki *anki.Anki, opts *CreateOptions) error {
+func createCmd(anki *anki.Anki, opts *CreateOptions) (err error) {
 	var (
 		cardType string
 		deckName string
 	)
-	tmpl := template.CREATE_CARD
 	note := models.Note{}
-	createNote := models.CreateNote{}
+	prompt := prompt.NewSurveyPrompt(*anki.Config)
 	if opts.Type != "" {
 		cardType = opts.Type
-	}
-
-	if opts.Deck != "" {
-		deckName = opts.Deck
-	}
-
-	if len(opts.Fields) > 0 {
-		fields := []string{}
-		for _, value := range opts.Fields {
-			fields = append(fields, value)
-		}
-		note.Fields = fields
-	}
-
-	if opts.Template != "" {
-		tmpl = opts.Template
-	}
-	if err := anki.Templates.Load(tmpl); err != nil {
-		return err
-	}
-
-	noteType, err := anki.Api.GetNoteType(cardType)
-
-	if err != nil {
-		logger.Error(err)
-		return err
-	}
-
-	var (
-		data    []byte
-		changed bool
-	)
-	if opts.File == "" {
-		if err := anki.Editor.Create(); err != nil {
+	} else {
+		noteTypes, err := anki.Api.NoteTypes()
+		if err != nil {
 			return err
 		}
-		defer anki.Editor.Remove()
-		for {
-			err, data, changed = anki.Editor.Edit(noteType)
-			if !changed {
-				return nil
-			}
-
-			if err == nil {
-				break
-			}
-			retry := anki.Editor.ConfirmUserError()
-			if !retry {
-				logger.Error(err)
-				return err
-			}
+		var noteTypeNames []string
+		for _, noteType := range noteTypes {
+			noteTypeNames = append(noteTypeNames, noteType.Name)
 		}
+		cardType, err = prompt.Choose("Type:", noteTypeNames, "Basic")
+		if err != nil {
+			return err
+		}
+	}
+	if opts.Deck != "" {
+		deckName = opts.Deck
 	} else {
-		data, err = ioutil.ReadFile(opts.File)
+		decks, err := anki.Api.Decks("")
+		if err != nil {
+			return err
+		}
+		deckNames := make([]string, len(decks))
+		for idx, deck := range decks {
+			deckNames[idx] = deck.Name
+		}
+		deckName, err = prompt.Choose("Deck:", deckNames, "Default")
 		if err != nil {
 			return err
 		}
 	}
 
-	if err := yaml.Unmarshal(data, &createNote); err != nil {
-		return err
+	noteType, err := anki.Api.NoteType(cardType)
+	if len(opts.Fields) > 0 {
+		// TODO: verify fields
+		fields := []string{}
+		for _, value := range opts.Fields {
+			fields = append(fields, value)
+		}
+		note.Fields = fields
+	} else {
+		fieldPrompts := make([]*survey.Question, len(noteType.Fields))
+		fieldResponses := make(map[string]interface{}, len(noteType.Fields))
+		for idx, field := range noteType.Fields {
+			fieldPrompts[idx] = &survey.Question{
+				Prompt: &survey.Input{Message: field.Name},
+				Name:   field.Name,
+			}
+		}
+		err = survey.Ask(fieldPrompts, &fieldResponses)
+		if err != nil {
+			return err
+		}
+		note.Fields = make([]string, len(noteType.Fields))
+		for idx, f := range noteType.Fields {
+			if field, ok := fieldResponses[f.Name]; ok {
+				note.Fields[idx] = field.(string)
+			}
+		}
 	}
-
-	// TODO: May need to move this to a method
-	note.Model = noteType
-	for _, fld := range createNote.Fields {
-		note.Fields = append(note.Fields, fld)
+	if len(opts.Tags) > 0 {
+		note.StringTags = strings.Join(opts.Tags, ",")
+	} else {
+		includeTags, err := prompt.Confirm("Add tags?")
+		if err != nil {
+			return err
+		}
+		if includeTags {
+			tags, err := anki.Api.Tags()
+			if err != nil {
+				return err
+			}
+			selectedTags, err := prompt.Select("Tags:", tags, tags[0])
+			if err != nil {
+				return err
+			}
+			note.StringTags = strings.Join(selectedTags, ",")
+		}
 	}
-	note.StringTags = strings.Join(createNote.Tags, ",")
 
 	// TODO: Figure out what to do with output card,
 	_, err = anki.Api.CreateCard(note, noteType, deckName)
@@ -134,10 +138,5 @@ func createCmd(anki *anki.Anki, opts *CreateOptions) error {
 		logger.Error(err)
 		return err
 	}
-
-	var buffer bytes.Buffer
-	buffer.WriteString("Created new card")
-	buffer.WriteTo(anki.IO.Output)
-
 	return nil
 }
