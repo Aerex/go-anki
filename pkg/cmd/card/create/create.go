@@ -85,11 +85,23 @@ func createCmd(anki *anki.Anki, opts *CreateOptions) (err error) {
 	}
 
 	noteType, err := anki.Api.NoteType(cardType)
+	noteTypeMap := make(map[string]string)
 	if len(opts.Fields) > 0 {
-		// TODO: verify fields
+		for _, f := range noteType.Fields {
+			noteTypeMap[f.Name] = f.Name
+		}
+		invalidFields := []string{}
 		fields := []string{}
 		for _, value := range opts.Fields {
-			fields = append(fields, value)
+			if _, ok := noteTypeMap[value]; ok {
+				fields = append(fields, value)
+			} else {
+				invalidFields = append(invalidFields, value)
+			}
+		}
+
+		if len(invalidFields) > 0 {
+			return fmt.Errorf("fields \"%s\" are not defined in %s", strings.Join(invalidFields, ", "), noteType.Name)
 		}
 		note.Fields = fields
 	} else {
