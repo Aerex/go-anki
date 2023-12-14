@@ -148,9 +148,11 @@ type Note struct {
 	// sort field: used for quick sorting and duplicate check.
 	// The sort field is an integer so that when users are sorting on a field that contains only numbers,
 	// they are sorted in numeric instead of lexical order. Text is stored in this integer field.
-	SortField  string `json:"sfld" yaml:"sfld" db:"sfld"`
-	USN        int    `json:"usn" yaml:"usn" db:"usn"`
-	LatexPre   string `json:"latexPost,omitempty" yaml:"laxtexPost,omitempty" db:"laxtexPost,omitempty"`
+	SortField string `json:"sfld" yaml:"sfld" db:"sfld"`
+	USN       int    `json:"usn" yaml:"usn" db:"usn"`
+	LatexPre  string `json:"latexPost,omitempty" yaml:"laxtexPost,omitempty" db:"laxtexPost,omitempty"`
+	// StringTags are space-separated string of tags.
+	// includes space at the beginning and end, for LIKE "% tag %" queries
 	StringTags string `json:"string_tags" yaml:"string_tags" db:"tags"`
 	Checksum   uint64 `yaml:"csum" db:"csum"`
 }
@@ -263,6 +265,8 @@ type StudiedToday struct {
 	Filter int `json:"filter" filter:"filter"`
 }
 
+type TagCache map[string]int
+
 // The structure representing the collection for the user
 type Collection struct {
 	// arbitrary number since there is only one row
@@ -275,6 +279,8 @@ type Collection struct {
 	NoteTypes NoteTypes      `json:"models" db:"models"`
 	DeckConfs DeckConfigs    `json:"dconf" db:"dconf"`
 	Decks     Decks          `json:"decks" db:"decks"`
+	// a cache of tags used in the collection (This list is displayed in the browser. Potentially at other place)
+	Tags TagCache `json:"tags" db:"tags"`
 }
 
 type NewCardOrder int

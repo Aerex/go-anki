@@ -97,6 +97,10 @@ func (dc *DeckConfigs) Scan(src interface{}) error {
 	return scanBlob(src, dc, "DeckConf")
 }
 
+func (t *TagCache) Scan(src interface{}) error {
+	return scanBlob(src, t, "TagCache")
+}
+
 // TODO: Abstract into on method for NoteTypes and Decks
 func (nt *NoteTypes) UnmarshalJSON(src []byte) error {
 	// unmarshall raw data using string as ID
@@ -187,13 +191,20 @@ func (f *NoteFields) Scan(src interface{}) error {
 	case string:
 		tmp = src.(string)
 	default:
-		return errors.New("Incompatible type for FieldValues")
+		return errors.New("Incompatible type for NoteFields")
 	}
+
+	tmp = strings.ReplaceAll(tmp, "\n", "")
 	// the values of the fields in this note. separated by 0x1f (31) character `^_`
-	*f = NoteFields(strings.Split(tmp, "\x1f"))
+	// FIXME: sometimes the value will be in unicode and sometimes it isn't.
+	if strings.Contains(tmp, "^_") {
+		*f = NoteFields(strings.Split(tmp, "^_"))
+	} else {
+		*f = NoteFields(strings.Split(tmp, "\x1f"))
+	}
 	return nil
 }
 
 func (f NoteFields) Value() (driver.Value, error) {
-	return driver.Value(strings.Join(f, "^_")), nil
+	return strings.Join(f, "\x1f"), nil
 }

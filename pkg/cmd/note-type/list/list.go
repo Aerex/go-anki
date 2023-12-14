@@ -10,7 +10,6 @@ import (
 type ListOptions struct {
 	Query    string
 	Template string
-	Name     string
 }
 
 func NewListCmd(anki *anki.Anki, overrideF func(*anki.Anki) error) *cobra.Command {
@@ -18,7 +17,7 @@ func NewListCmd(anki *anki.Anki, overrideF func(*anki.Anki) error) *cobra.Comman
 
 	cmd := &cobra.Command{
 		Use:   "list",
-		Short: "List card types",
+		Short: "List note types",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if overrideF != nil {
 				return overrideF(anki)
@@ -27,17 +26,13 @@ func NewListCmd(anki *anki.Anki, overrideF func(*anki.Anki) error) *cobra.Comman
 		},
 	}
 
-	// TODO: No way to query note types since data is a json blob
-	// Potential solutions could be to index note types into sepeate data base for querying
-	//cmd.Flags().StringVarP(&opts.Query, "query", "q", "", "Filter using expressions, see https://docs.ankiweb.net/searching.html")
 	cmd.Flags().StringVarP(&opts.Template, "template", "t", "", "Override template for output")
-	cmd.Flags().StringVarP(&opts.Name, "name", "n", "", "Name of card type")
 
 	return cmd
 }
 
 func listCmd(anki *anki.Anki, opts *ListOptions) error {
-	tmpl := template.LIST_CARD_TYPES
+	tmpl := template.LIST_NOTE_TYPES
 	if opts.Template != "" {
 		tmpl = opts.Template
 	}
@@ -45,12 +40,7 @@ func listCmd(anki *anki.Anki, opts *ListOptions) error {
 		return err
 	}
 
-	var name string
-	if opts.Name != "" {
-		name = opts.Name
-	}
-
-	mdls, err := anki.Api.GetModels(name)
+	mdls, err := anki.Api.NoteTypes()
 	if err != nil {
 		return err
 	}
