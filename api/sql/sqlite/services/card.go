@@ -36,7 +36,7 @@ func (c *CardService) Find(qs string) (cards []models.Card, err error) {
 	var cls string
 	var args []string
 	if qs != "" {
-		bld := queries.NewBuilder(qs)
+		bld := queries.NewBuilder(qs, c.colRepo, c.deckRepo, c.noteRepo)
 		cls, args, err = bld.Query()
 	}
 	// get cards and notes

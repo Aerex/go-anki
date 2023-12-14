@@ -56,8 +56,8 @@ func (c cardRepo) List(cls string, args []string) ([]models.Card, error) {
 	for i, d := range args {
 		iargs[i] = d
 	}
-	baseQuery := `SELECT cards.*, note.flds "note.flds", note.mid "note.mid" FROM cards
-    JOIN notes note ON note.id = cards.nid`
+	baseQuery := "SELECT c.*, note.flds \"note.flds\", note.mid \"note.mid\" FROM cards \"c\"" +
+		" JOIN notes note ON note.id = c.nid"
 	var rows *sqlx.Rows
 	if cls != "" {
 		query, arglist, err := sqlx.In(baseQuery+" WHERE "+cls, iargs...)

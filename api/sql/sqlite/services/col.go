@@ -1,6 +1,8 @@
 package services
 
 import (
+	"sort"
+
 	repos "github.com/aerex/go-anki/api/sql/sqlite/repositories"
 	"github.com/aerex/go-anki/pkg/models"
 )
@@ -27,4 +29,20 @@ func (c *ColService) GetNoteTypeByName(name string) (noteType models.NoteType, e
 		}
 	}
 	return
+}
+
+func (c *ColService) NoteTypes() (models.NoteTypes, error) {
+	noteTypes, err := c.colRepo.NoteTypes()
+	if err != nil {
+		return models.NoteTypes{}, err
+	}
+	// always have card fields sorted by ordinal property
+	for _, nt := range noteTypes {
+		sort.Sort(repos.ByOrdinal(nt.Fields))
+	}
+	return noteTypes, nil
+}
+
+func (c *ColService) Tags() ([]string, error) {
+	return c.colRepo.Tags()
 }

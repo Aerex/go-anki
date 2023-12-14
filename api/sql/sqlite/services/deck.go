@@ -43,18 +43,14 @@ func (d *DeckService) List() (decks []*models.Deck, err error) {
 	return
 }
 
-func (d *DeckService) Create(deck *models.Deck, deckType string) (createdDeck models.Deck, err error) {
-	var decks models.Decks
-	decks, err = d.deckRepo.Decks()
+func (d *DeckService) Create(deck *models.Deck) (err error) {
+	decks, err := d.deckRepo.Decks()
 	id := d.fetchNewId(decks)
 	deck.ID = models.ID(id.Unix())
-	decks, err = d.Save(deck)
-	if err != nil {
-		return
+	if err := d.Save(deck); err != nil {
+		return err
 	}
-	createdDeck = *decks[deck.ID]
-
-	return
+	return nil
 }
 
 func (d *DeckService) Confs() (models.DeckConfigs, error) {
@@ -65,12 +61,18 @@ func (d *DeckService) Confs() (models.DeckConfigs, error) {
 	return confs, nil
 }
 
-func (d *DeckService) Save(deck *models.Deck) (decks models.Decks, err error) {
+func (d *DeckService) Save(deck *models.Deck) error {
 	mod := models.UnixTime(time.Now().Unix())
 	deck.Mod = &mod
-	deck.USN, err = d.colRepo.USN()
+	var usnErr error
+	deck.USN, usnErr = d.colRepo.USN(false)
+	if usnErr != nil {
+		return usnErr
+	}
 
-	tx := d.deckRepo.MustCreateTrans()
-	decks, err = d.deckRepo.WithTrans(tx).Create(deck)
-	return
+	if err := d.deckRepo.Create(deck); err != nil {
+		return err
+	}
+
+	return nil
 }

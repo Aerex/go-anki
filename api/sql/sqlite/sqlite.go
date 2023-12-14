@@ -11,7 +11,6 @@ import (
 	"github.com/aerex/go-anki/api/sql/sqlite/services"
 	schedv2 "github.com/aerex/go-anki/api/sql/sqlite/services/sched/v2"
 	"github.com/aerex/go-anki/internal/config"
-	fanki "github.com/flimzy/anki"
 	"github.com/jmoiron/sqlx"
 )
 
@@ -59,7 +58,7 @@ func (*SqliteApi) GetDeckConfig(name string) (models.DeckConfig, error) {
 }
 
 // Decks implements api.Api
-func (a *SqliteApi) Decks(qs string, includeStats bool) ([]*models.Deck, error) {
+func (a *SqliteApi) Decks(qs string) ([]*models.Deck, error) {
 	return a.DeckService.List()
 }
 
@@ -71,16 +70,6 @@ func (a *SqliteApi) DeckStudyStats() (stats map[models.ID]models.DeckStudyStats,
 	//default:
 	//}
 	//return
-}
-
-// GetModel implements api.Api
-func (*SqliteApi) GetModel(name string) (fanki.Model, error) {
-	panic("unimplemented")
-}
-
-// GetModels implements api.Api
-func (*SqliteApi) GetModels(name string) (models.NoteTypes, error) {
-	panic("unimplemented")
 }
 
 // GetStudiedStats implements api.Api
@@ -106,8 +95,7 @@ func (a SqliteApi) GetAllDeckConfigs() (deckConfigs models.DeckConfigs, err erro
 	return
 }
 
-// GetNoteType implements api.Api
-func (a SqliteApi) GetNoteType(name string) (noteType models.NoteType, err error) {
+func (a SqliteApi) NoteType(name string) (noteType models.NoteType, err error) {
 	noteType, err = a.ColService.GetNoteTypeByName(name)
 	if err != nil {
 		return
@@ -132,9 +120,17 @@ func (a SqliteApi) GetCards(qs string, limit int) (cards []models.Card, err erro
 	return
 }
 
-func (a SqliteApi) CreateDeck(name string, deckType string) (createdDeck models.Deck, err error) {
-	if _, err = a.DeckService.Create(&createdDeck, deckType); err != nil {
+func (a SqliteApi) CreateDeck(name string) (err error) {
+	if err = a.DeckService.Create(&models.Deck{Name: name}); err != nil {
 		return
 	}
 	return
+}
+
+func (a *SqliteApi) NoteTypes() (types models.NoteTypes, err error) {
+	return a.ColService.NoteTypes()
+}
+
+func (a *SqliteApi) Tags() ([]string, error) {
+	return a.ColService.Tags()
 }

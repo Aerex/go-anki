@@ -73,7 +73,6 @@ func (s *SchedV2Service) DeckStudyStats() (map[models.ID]models.DeckStudyStats, 
 	decks := maps.Values(deckMap)
 	sort.Sort(repos.ByDeckName(decks))
 	deckIDsInClause := sql.InClauseFromIDs(deckIDs)
-	tx := s.deckRepo.MustCreateTrans()
 	if err = s.cardsRepo.RecoverOrphans(deckIDsInClause); err != nil {
 		return stats, err
 	}
@@ -84,7 +83,10 @@ func (s *SchedV2Service) DeckStudyStats() (map[models.ID]models.DeckStudyStats, 
 	if err != nil {
 		return stats, err
 	}
-	s.deckRepo.WithTrans(tx).FixDecks(deckMap, usn)
+	err = s.deckRepo.FixDecks(deckMap, usn)
+	if err != nil {
+		return stats, err
+	}
 	limits := make(map[string][]int)
 
 	var nlmt int

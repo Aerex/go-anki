@@ -7,7 +7,14 @@ import (
 	ankisql "github.com/aerex/go-anki/api/sql"
 	"github.com/aerex/go-anki/pkg/models"
 	"github.com/jmoiron/sqlx"
+	"golang.org/x/exp/maps"
 )
+
+type ByOrdinal []*models.CardField
+
+func (n ByOrdinal) Len() int           { return len(n) }
+func (n ByOrdinal) Swap(i, j int)      { n[i], n[j] = n[j], n[i] }
+func (n ByOrdinal) Less(i, j int) bool { return n[i].Ordinal < n[j].Ordinal }
 
 type colRepo struct {
 	Conn *sqlx.DB
@@ -21,9 +28,10 @@ type ColRepo interface {
 	NextDue() (due int64, err error)
 	DeckConf(deckId models.ID) (deckConf models.DeckConfig, err error)
 	SchedToday() int64
-	USN() (usn int, err error)
+	USN(server bool) (usn int, err error)
 	Rollover() int
 	DayCutoff() int64
+	Tags() (tags []string, err error)
 	NoteTypes() (noteTypes models.NoteTypes, err error)
 }
 
@@ -87,14 +95,17 @@ func (c colRepo) DeckConf(deckId models.ID) (deckConf models.DeckConfig, err err
 }
 
 // USN retrieves the update sequence of col
-func (c colRepo) USN() (usn int, err error) {
-	var col models.Collection
-	query := `SELECT usn FROM col`
-	if err = c.Conn.Get(&col, query); err != nil {
+func (c colRepo) USN(server bool) (usn int, err error) {
+	if server {
+		var col models.Collection
+		query := `SELECT usn FROM col`
+		if err = c.Conn.Get(&col, query); err != nil {
+			return
+		}
+		usn = col.USN
 		return
 	}
-	usn = col.USN
-	return
+	return -1, nil
 }
 
 func (c colRepo) Rollover() int {
@@ -132,4 +143,16 @@ func (c colRepo) NoteTypes() (noteTypes models.NoteTypes, err error) {
 		return
 	}
 	return
+}
+
+func (c colRepo) Tags() (tags []string, err error) {
+	var tagCache models.TagCache
+	query := `SELECT tags From col LIMIT 1`
+	if err = c.Conn.QueryRowx(query).Scan(&tagCache); err != nil {
+		return
+	}
+	tags = maps.Keys(tagCache)
+
+	return
+
 }
