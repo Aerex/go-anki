@@ -8,7 +8,7 @@ import (
 
 func NewCardTypeCmd(anki *anki.Anki) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "card-types <command>",
+		Use:   "card-type <command>",
 		Short: "Manage card types",
 	}
 

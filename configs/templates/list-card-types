@@ -1,17 +1,3 @@
 {{/* list card types templates */}}
-{{- $l := len .Data -}}
-{{- range $index, $element := .Data }} 
-{{ .Name  }} 
-------------------
-{{- range .Templates }} 
-
-{{ .Name }}
-**********************
-Front Template:
-
-  {{ .QuestionFormat }}
-
-Back Template: |-
-
-  {{ .AnswerFormat }} 
-**********************{{ end }}{{ end }}
+{{- $l := len .Data -}}{{- range $index, $element := .Data }}
+{{ .Name  -}} {{ end }}
