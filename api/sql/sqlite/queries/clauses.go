@@ -2,11 +2,12 @@ package queries
 
 import (
 	"fmt"
-	"golang.org/x/exp/slices"
 	"math"
 	"regexp"
 	"strconv"
 	"strings"
+
+	"golang.org/x/exp/slices"
 
 	fanki "github.com/flimzy/anki"
 
@@ -80,17 +81,11 @@ func (c *clause) template() string {
 }
 
 func (c *clause) deck() string {
-	// TODO: Look into migrating into a package
-	findDeckByName := func(decks models.Decks, name string) (deck models.Deck, err error) {
-
-		for _, d := range decks {
-			if d.Name == name {
-				return *d, nil
-			}
-		}
-		return models.Deck{}, err
-	}
 	decks, err := c.deckRepo.Decks()
+	if err != nil {
+		return ""
+	}
+	deckNameMap, err := c.deckRepo.DeckNameMap()
 	if err != nil {
 		return ""
 	}
@@ -112,18 +107,20 @@ func (c *clause) deck() string {
 			return ""
 		}
 	} else if !strings.Contains(c.val, "*") {
-		d, err := findDeckByName(decks, c.val)
-		if err != nil {
+		d, exists := deckNameMap[c.val]
+		if !exists {
 			return ""
 		}
+
 		ids, err = c.deckRepo.ChildrenDeckIDs(d.ID)
 		if err != nil {
 			return ""
 		}
+		ids = append(ids, d.ID)
 	} else {
 		// wildcard
-		d, err := findDeckByName(decks, c.val)
-		if err != nil {
+		d, exists := deckNameMap[c.val]
+		if !exists {
 			return ""
 		}
 		ids, err = c.deckRepo.ChildrenDeckIDs(d.ID)
@@ -152,25 +149,23 @@ func (c *clause) deck() string {
 							ids = append(ids, id)
 						}
 					}
-
-					if len(ids) == 0 {
-						return ""
-					}
-
-					var sids []string
-					for _, id := range ids {
-						sids = append(sids, fmt.Sprint(id))
-					}
-
-					sidls := strings.Join(sids, ", ")
-					// convert to sql clauses
-					return fmt.Sprintf("c.did in (%s) or c.odid in (%s)", sidls, sidls)
 				}
 			}
 		}
 	}
 
-	return ""
+	if len(ids) == 0 {
+		return ""
+	}
+
+	var sids []string
+	for _, id := range ids {
+		sids = append(sids, fmt.Sprint(id))
+	}
+
+	sidls := strings.Join(sids, ", ")
+	// convert to sql clauses
+	return fmt.Sprintf("c.did in (%s) or c.odid in (%s)", sidls, sidls)
 }
 
 func (c *clause) flag() string {

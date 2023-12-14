@@ -17,6 +17,7 @@ type builder struct {
 	tokens   []string
 	colRepo  repositories.ColRepo
 	deckRepo repositories.DeckRepo
+	noteRepo repositories.NoteRepo
 }
 
 type queryState struct {
@@ -27,9 +28,12 @@ type queryState struct {
 	bad    bool
 }
 
-func NewBuilder(qs string) Builder {
+func NewBuilder(qs string, c repositories.ColRepo, d repositories.DeckRepo, n repositories.NoteRepo) Builder {
 	return &builder{
-		qs: qs,
+		qs:       qs,
+		colRepo:  c,
+		deckRepo: d,
+		noteRepo: n,
 	}
 }
 
@@ -75,7 +79,11 @@ func (s *queryState) add(query string, wrap bool) {
 func (b *builder) Query() (cls string, args []string, err error) {
 	b.tokenize()
 	state := queryState{}
-	var sqlCls clause
+	sqlCls := clause{
+		colRepo:  b.colRepo,
+		deckRepo: b.deckRepo,
+		noteRepo: b.noteRepo,
+	}
 	for _, token := range b.tokens {
 		if state.bad {
 			return "", []string{}, fmt.Errorf("invalid query: %s", strings.Join(b.tokens, " "))
@@ -98,7 +106,8 @@ func (b *builder) Query() (cls string, args []string, err error) {
 			}
 			cmd := strings.ToLower(parts[0])
 			val := parts[1]
-			sqlCls = clause{val: val, cmd: cmd}
+			sqlCls.val = val
+			sqlCls.cmd = cmd
 			switch cmd {
 			case "added":
 				state.add(sqlCls.added(), true)
