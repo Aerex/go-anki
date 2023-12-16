@@ -7,6 +7,7 @@ import (
 
 	"github.com/aerex/go-anki/internal/config"
 	"github.com/aerex/go-anki/pkg/models"
+	"github.com/rs/zerolog"
 )
 
 const (
@@ -26,7 +27,7 @@ type Api interface {
 	// Support simple search and regex expression
 	// See https://docs.ankiweb.net/searching.html#simple-searches
 	// See https://docs.ankiweb.net/searching.html#regular-expressions
-	Decks(qs string, includeStats bool) ([]*models.Deck, error)
+	Decks(qs string) ([]*models.Deck, error)
 	// Get http client used in api. Useful for mocking http client in test
 	GetClient() *http.Client
 	// TODO: Reimplemented StudiedStats method based on Stats class in AnkiDroid or Anki Desktop
@@ -34,9 +35,9 @@ type Api interface {
 	// Result can be filter by the provided query string. See GetDecks for more example usage
 	//GetStudiedStats(filter string) (models.CollectionStats, error)
 	// Rename the deck using its ID or name
-	RenameDeck(nameOrId string, newName string) (models.Deck, error)
+	RenameDeck(nameOrId string, newName string) error
 	// Create a deck
-	CreateDeck(name string, deckType string) (models.Deck, error)
+	CreateDeck(name string) error
 	// Get multiple cards
 	GetCards(qs string, limit int) ([]models.Card, error)
 	// Get a deck study option
@@ -44,26 +45,28 @@ type Api interface {
 	// Get multiple deck study options
 	GetAllDeckConfigs() (deckConfigs models.DeckConfigs, err error)
 	// Get a card model
-	GetNoteType(name string) (models.NoteType, error)
+	NoteType(name string) (models.NoteType, error)
 	// Get one or more card models
 	// TODO: Need to remove later
-	GetModels(name string) (models.NoteTypes, error)
+	NoteTypes() (models.NoteTypes, error)
 	// Update a deck configuration
 	UpdateDeckConfig(config models.DeckConfig, id string) (models.DeckConfig, error)
 	// Create a card for a deck given the fields and the model
 	CreateCard(note models.Note, model models.NoteType, deckName string) (models.Card, error)
+	// Tags returns a list of tags cached in the collection
+	Tags() ([]string, error)
 }
 
 type ApiConfig struct {
 	Type   string
-	NewApi func(config *config.Config) Api
+	NewApi func(config *config.Config, log *zerolog.Logger) Api
 }
 
 // Called to create or find the api client based on the configured backend
-func NewApi(config *config.Config) Api {
+func NewApi(config *config.Config, log *zerolog.Logger) Api {
 	api := ApiConfigs[config.General.Type]
 
-	return api.NewApi(config)
+	return api.NewApi(config, log)
 }
 
 var ApiConfigs = make(map[string]ApiConfig)

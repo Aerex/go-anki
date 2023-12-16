@@ -11,6 +11,7 @@ import (
 	"github.com/aerex/go-anki/pkg/models"
 	"github.com/go-resty/resty/v2"
 	"github.com/op/go-logging"
+	"github.com/rs/zerolog"
 )
 
 const (
@@ -47,7 +48,7 @@ func init() {
 	})
 }
 
-func NewApi(config *config.Config) api.Api {
+func NewApi(config *config.Config, log *zerolog.Logger) api.Api {
 	api := &RestApi{
 		Client: resty.New(),
 		Config: config,
@@ -70,7 +71,7 @@ func NewApi(config *config.Config) api.Api {
 //  return req.Get(url)
 //}
 
-func (a RestApi) Decks(qs string, includeStats bool) ([]*models.Deck, error) {
+func (a RestApi) Decks(qs string) ([]*models.Deck, error) {
 	if a.Config.API.Endpoint != "" {
 		decks := []*models.Deck{}
 		req := a.Client.R()
@@ -111,7 +112,7 @@ func (a RestApi) GetClient() *http.Client {
 //	return models.CollectionStats{}, errors.New("could not get studied stats")
 //}
 
-func (a RestApi) RenameDeck(nameOrId, newName string) (models.Deck, error) {
+func (a RestApi) RenameDeck(nameOrId, newName string) error {
 	if a.Config.API.Endpoint != "" {
 		updatedDeck := &models.Deck{}
 		errorResponse := &ErrorResponse{}
@@ -123,18 +124,18 @@ func (a RestApi) RenameDeck(nameOrId, newName string) (models.Deck, error) {
 
 		resp, err := req.Patch(fmt.Sprintf("%s/{deckNameorId}", DECKS_URI))
 		if err != nil {
-			return models.Deck{}, err
+			return err
 		}
 		if resp.IsError() {
-			return models.Deck{}, errors.New(errorResponse.Message)
+			return errors.New(errorResponse.Message)
 		}
-		return *updatedDeck, nil
+		return nil
 	}
 
-	return models.Deck{}, errors.New("could not rename deck")
+	return errors.New("could not rename deck")
 }
 
-func (a RestApi) CreateDeck(name string, deckType string) (models.Deck, error) {
+func (a RestApi) CreateDeck(name string) error {
 	if a.Config.API.Endpoint != "" {
 		createdDeck := &models.Deck{}
 		errorResponse := &ErrorResponse{}
@@ -147,15 +148,15 @@ func (a RestApi) CreateDeck(name string, deckType string) (models.Deck, error) {
 
 		resp, err := req.Post(DECKS_URI)
 		if err != nil {
-			return models.Deck{}, err
+			return err
 		}
 		if resp.IsError() {
-			return models.Deck{}, errors.New(errorResponse.Message)
+			return errors.New(errorResponse.Message)
 		}
-		return *createdDeck, nil
+		return nil
 	}
 
-	return models.Deck{}, errors.New("could not create deck")
+	return errors.New("could not create deck")
 }
 
 func (a RestApi) GetAllDeckConfigs() (models.DeckConfigs, error) {
@@ -256,15 +257,19 @@ func (a RestApi) CreateCard(note models.Note, mdl models.NoteType, deckName stri
 func (a RestApi) DeckStudyStats() (stats map[models.ID]models.DeckStudyStats, err error) {
 	panic("unimplemented")
 }
+func (a RestApi) NoteType(name string) (models.NoteType, error) {
+	panic("unimplemented")
+}
 
-func (a RestApi) GetModels(name string) (models.NoteTypes, error) {
+func (a RestApi) Tags() ([]string, error) {
+	panic("unimplemented")
+}
+
+func (a RestApi) NoteTypes() (models.NoteTypes, error) {
 	if a.Config.API.Endpoint != "" {
 		mdls := &models.NoteTypes{}
 		req := a.Client.R()
 		req.SetResult(mdls)
-		if name != "" {
-			req.SetQueryParam("name", name)
-		}
 		resp, err := req.Get(fmt.Sprintf("%s/models", COLLECTION_URI))
 		if err != nil || resp.IsError() {
 			return models.NoteTypes{}, err

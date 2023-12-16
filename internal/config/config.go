@@ -26,13 +26,18 @@ const (
 )
 
 type Logger struct {
-	Level  string `yaml:"level"`
-	File   string `yaml:"file"`
-	Format string `yaml:"format"`
+	Level  string `toml:"level"`
+	File   string `toml:"file"`
+	Format string `toml:"format"`
+	Sql    bool   `toml:"sql" comment:"Enable to log SQL statements"`
+}
+
+type Prompt struct {
+	Vim bool `toml:"vim" comment:"Enable vim mode to use j/k to cycle through selections"`
 }
 
 type Color struct {
-	Hint string `yaml:"hint"`
+	Hint string `toml:"hint"`
 }
 
 type API struct {
@@ -45,31 +50,32 @@ type API struct {
 
 type General struct {
 	// Options are `REST` and `DB`
-	Type string `yaml:"type" mapstructure:"type" comment:"Options are REST and DB"`
+	Type string `mapstructure:"type" comment:"Options are REST and DB"`
 	// SchedulerVersion sets the the scheduler version to use when syncing. Options are 2 or 3
 	// @see https://faqs.ankiweb.net/the-anki-2.1-scheduler.html and https://faqs.ankiweb.net/the-2021-scheduler.html
 	// for information on compatibility
-	SchedulerVersion int `yaml:"sched" mapstructure:"sched" comment:"Sets the scheduler version to use when syncing. Options are 2 or 3"`
+	SchedulerVersion int `mapstructure:"sched" comment:"Sets the scheduler version to use when syncing. Options are 2 or 3"`
 	// The path of for the editor that will be launched when editing content (ie: vim or notepad)
 	// Default will use the editor set by the EDITOR or ANKICLI_EDITOR environment variable
-	Editor string `yaml:"editor" toml:"editor" comment:"The path of for the editor that will be launched when editing content (ie: vim or notepad)"`
+	Editor string `toml:"editor" comment:"The path of for the editor that will be launched when editing content (ie: vim or notepad)"`
 }
 
 type DB struct {
 	// the database driver (ie: sqlite3)
 	Driver string `toml:"driver" comment:"the database driver (ie: sqlite3)"`
 	// location of database file
-	File string `yaml:"file" toml:"file" comment:"location of database file"`
+	File string `toml:"file" comment:"location of database file"`
 }
 type Config struct {
 	// (Optional) the location of the database. If set TYPE must be set as DB
-	DB DB `yaml:"db,omitempty" toml:"db" comment:"the location of the database. If set TYPE must be set as DB"`
+	DB DB `toml:"db,omitempty" comment:"the location of the database. If set TYPE must be set as DB"`
 	// The username credential to access backend
-	Logger  Logger  `yaml:"logger" toml:"logger"`
-	API     API     `toml:"api" toml:"api"`
+	Logger  Logger  `toml:"logger"`
+	API     API     `toml:"api"`
 	General General `toml:"general"`
-	Color   Color   `yaml:"color,omitempty" toml:"color"`
+	Color   Color   `toml:"color,omitempty"`
 	Dir     string
+	Prompt  Prompt `toml:"prompt"`
 }
 
 func init() {

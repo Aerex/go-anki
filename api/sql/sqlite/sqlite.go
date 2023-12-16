@@ -6,12 +6,15 @@ import (
 
 	repos "github.com/aerex/go-anki/api/sql/sqlite/repositories"
 	"github.com/aerex/go-anki/pkg/models"
+	"github.com/rs/zerolog"
+	sqldblogger "github.com/simukti/sqldb-logger"
 
 	"github.com/aerex/go-anki/api"
 	"github.com/aerex/go-anki/api/sql/sqlite/services"
 	schedv2 "github.com/aerex/go-anki/api/sql/sqlite/services/sched/v2"
 	"github.com/aerex/go-anki/internal/config"
 	"github.com/jmoiron/sqlx"
+	"github.com/simukti/sqldb-logger/logadapter/zerologadapter"
 )
 
 func init() {
@@ -29,11 +32,16 @@ type SqliteApi struct {
 	SchedV2Service schedv2.SchedV2Service
 }
 
-func NewApi(config *config.Config) api.Api {
+func NewApi(config *config.Config, log *zerolog.Logger) api.Api {
 	api := &SqliteApi{
 		Config: config,
 	}
 	db := sqlx.MustConnect(strings.ToLower(config.DB.Driver), config.DB.File)
+
+	// enable sql logging
+	if config.Logger.Sql {
+		db.DB = sqldblogger.OpenDriver(config.DB.File, db.Driver(), zerologadapter.New(*log))
+	}
 	cardRepo := repos.NewCardRepository(db)
 	colRepo := repos.NewColRepository(db)
 	deckRepo := repos.NewDeckRepository(db)
@@ -77,9 +85,9 @@ func (a *SqliteApi) GetStudiedStats(filter string) (models.CollectionStats, erro
 	panic("unimplemented")
 }
 
-// RenameDeck implements api.Api
-func (*SqliteApi) RenameDeck(nameOrId string, newName string) (models.Deck, error) {
-	panic("unimplemented")
+// RenameDeck rename the deck provided
+func (a SqliteApi) RenameDeck(name string, newName string) error {
+	return a.DeckService.Rename(name, newName)
 }
 
 // UpdateDeckConfig implements api.Api

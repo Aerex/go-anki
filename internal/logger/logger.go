@@ -3,52 +3,57 @@ package logger
 import (
 	"os"
 	"strings"
+	"time"
 
 	"github.com/aerex/go-anki/pkg/anki"
 	"github.com/mitchellh/go-homedir"
-	"github.com/op/go-logging"
+	"github.com/rs/zerolog"
 	"github.com/spf13/viper"
 )
 
-func ConfigureLogger(anki *anki.Anki, module string) error {
-	var logBackend logging.Backend
+var logger zerolog.Logger
+
+func ConfigureLogger(anki *anki.Anki) (*zerolog.Logger, error) {
 	if anki.Config.Logger.File != "" {
 		path, err := homedir.Expand(anki.Config.Logger.File)
 		if err != nil {
-			return err
+			return nil, err
 		}
 
 		f, err := os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_RDWR, 0666)
 		if err != nil {
-			return err
+			return nil, err
 		}
-		// Save ref to file buffer
-		anki.IO.Log = f
 
-		logBackend = logging.NewLogBackend(f, "", 0)
+		logger = zerolog.New(zerolog.ConsoleWriter{
+			Out:        f,
+			NoColor:    true,
+			TimeFormat: time.RFC3339,
+		})
 	} else {
-		logBackend = logging.NewLogBackend(anki.IO.Error, "", 0)
+		logger = zerolog.New(zerolog.ConsoleWriter{
+			Out: anki.IO.Error,
+		})
 	}
-
-	// Get log format from config
-	format := viper.GetString("logger.format")
-	if format == "" {
-		format = "%{color}%{time:2006-01-02T15:04:05}%{level:-4s}%{color:reset} %{message}"
-	}
-	logFormat := logging.NewBackendFormatter(logBackend, logging.MustStringFormatter(format))
 
 	level := strings.ToUpper(viper.GetString("logger.level"))
-	if level == "" {
-		level = logging.DEBUG.String()
+	switch level {
+	case "TRACE":
+		zerolog.SetGlobalLevel(zerolog.TraceLevel)
+	case "DEBUG":
+		zerolog.SetGlobalLevel(zerolog.DebugLevel)
+	case "INFO":
+		zerolog.SetGlobalLevel(zerolog.InfoLevel)
+	case "WARN":
+		zerolog.SetGlobalLevel(zerolog.WarnLevel)
+	case "ERR":
+	case "ERROR":
+		zerolog.SetGlobalLevel(zerolog.ErrorLevel)
+	case "FATAL":
+		zerolog.SetGlobalLevel(zerolog.FatalLevel)
+	default:
+		zerolog.SetGlobalLevel(zerolog.InfoLevel)
 	}
-	logLevel := logging.AddModuleLevel(logBackend)
-	l, err := logging.LogLevel(level)
-	if err != nil {
-		return err
-	}
-	logLevel.SetLevel(l, module)
-
-	logging.SetBackend(logLevel, logFormat)
-	// TODO: Add multi log backends to output to both file and  to
-	return nil
+	// Save ref to file buffer
+	return &logger, nil
 }
