@@ -1,6 +1,7 @@
 package repositories
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -28,7 +29,7 @@ type DeckRepo interface {
 	Decks() (decks models.Decks, err error)
 	DeckNameMap() (deckNames map[string]models.Deck, err error)
 	ChildrenDeckIDs(did models.ID) (ids []models.ID, err error)
-	Create(deck *models.Deck) error
+	Save(deck *models.Deck) error
 	Conf(deckID models.ID) (models.DeckConfig, error)
 	Confs() (deckConfs models.DeckConfigs, err error)
 	Parents(deckID models.ID) (decks []models.Deck, err error)
@@ -61,16 +62,20 @@ func (d deckRepo) ChildrenDeckIDs(did models.ID) (ids []models.ID, err error) {
 	return
 }
 
-// Create creates a new deck to a collection
-func (d deckRepo) Create(deck *models.Deck) error {
+// Save creates or updates a deck in a collection
+func (d deckRepo) Save(deck *models.Deck) error {
 	return ankisql.Tx(d.Tx, func(tx *sqlx.Tx) error {
 		decks, err := d.Decks()
 		if err != nil {
 			return err
 		}
 		decks[deck.ID] = deck
-		query := `INSERT INTO col (decks) VALUES (?)`
-		if _, err := tx.Exec(query, decks); err != nil {
+		query := "UPDATE col SET decks = ?"
+		blob, err := json.Marshal(decks)
+		if err != nil {
+			return err
+		}
+		if _, err := tx.Exec(query, blob); err != nil {
 			return err
 		}
 		return nil
@@ -162,7 +167,7 @@ func (d deckRepo) Parents(deckID models.ID) (decks []models.Deck, err error) {
 	return
 }
 
-func (d deckRepo) ensureParentsExist(immediateParents string) (string, error) {
+func (d deckRepo) ensureParentsExist(immediateParents string, usn int) (string, error) {
 	dbDecks, err := d.DeckNameMap()
 	if err != nil {
 		return "", err
@@ -181,7 +186,7 @@ func (d deckRepo) ensureParentsExist(immediateParents string) (string, error) {
 			s = deck.Name
 		} else {
 			newDeckID := models.ID(time.Now().Unix())
-			if err := d.Create(&models.Deck{Name: s, ID: newDeckID}); err != nil {
+			if err := d.Save(&models.Deck{Name: s, ID: newDeckID}); err != nil {
 				return "", err
 			}
 		}
@@ -221,7 +226,7 @@ func (d deckRepo) FixDecks(decks models.Decks, usn int) error {
 				immediateParent := strings.Join(imDeckParts, "::")
 				if !slices.Contains(deckNames, immediateParent) {
 					// TODO: log fix deck with missing parent deck.Name
-					dbName, err := d.ensureParentsExist(updateDeck.Name)
+					dbName, err := d.ensureParentsExist(updateDeck.Name, usn)
 					if err != nil {
 						return err
 					}

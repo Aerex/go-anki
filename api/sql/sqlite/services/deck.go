@@ -1,6 +1,7 @@
 package services
 
 import (
+	"fmt"
 	"sort"
 	"time"
 
@@ -53,6 +54,27 @@ func (d *DeckService) Create(deck *models.Deck) (err error) {
 	return nil
 }
 
+// Rename renames an existing deck in a collection.
+func (d *DeckService) Rename(name, newName string) error {
+	deckNameMap, err := d.deckRepo.DeckNameMap()
+	if err != nil {
+		return err
+	}
+	deck, exists := deckNameMap[name]
+	if !exists {
+		return fmt.Errorf("could not find Deck %s", name)
+	}
+	deck.Name = newName
+	dconfs, err := d.deckRepo.Confs()
+	if err != nil {
+		return err
+	}
+	dconf := dconfs[deck.ID]
+	dconf.Name = newName
+	dconfs[deck.ID] = dconf
+	return d.Save(&deck)
+}
+
 func (d *DeckService) Confs() (models.DeckConfigs, error) {
 	confs, err := d.deckRepo.Confs()
 	if err != nil {
@@ -69,8 +91,7 @@ func (d *DeckService) Save(deck *models.Deck) error {
 	if usnErr != nil {
 		return usnErr
 	}
-
-	if err := d.deckRepo.Create(deck); err != nil {
+	if err := d.deckRepo.Save(deck); err != nil {
 		return err
 	}
 

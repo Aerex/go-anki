@@ -9,6 +9,7 @@ import (
 	"runtime"
 
 	shellQuote "github.com/kballard/go-shellquote"
+	"github.com/rs/zerolog"
 
 	"github.com/spf13/viper"
 )
@@ -19,7 +20,7 @@ type IO struct {
 	Input       io.ReadCloser
 	Output      io.Writer
 	Error       io.Writer
-	Log         *os.File
+	Log         *zerolog.Logger
 	ExecContext ExecContext
 }
 

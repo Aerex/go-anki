@@ -15,7 +15,7 @@ func NewRenameCmd(anki *anki.Anki, cb func(*anki.Anki) error) *cobra.Command {
 	opts := &RenameOptions{}
 
 	cmd := &cobra.Command{
-		Use:          "rename [deck_name | id ] [new_name] <options>",
+		Use:          "rename <name> <new_name> <options>",
 		Short:        "Rename deck",
 		Args:         cobra.ExactArgs(2),
 		SilenceUsage: true,
@@ -34,18 +34,15 @@ func NewRenameCmd(anki *anki.Anki, cb func(*anki.Anki) error) *cobra.Command {
 
 func renameCmd(anki *anki.Anki, opts *RenameOptions, args []string) error {
 
-	deck, err := anki.Api.RenameDeck(args[0], args[1])
+	err := anki.Api.RenameDeck(args[0], args[1])
 	if err != nil {
 		return err
 	}
 
 	if !opts.Quiet {
 		var buffer bytes.Buffer
-		buffer.WriteString("Renamed deck to " + deck.Name)
+		buffer.WriteString("Renamed deck to " + args[1])
 		buffer.WriteTo(anki.IO.Output)
 	}
-	// TODO: Might need a method to ...
-	// Use color or not
-	// Where to print the data (stdout or stream)
 	return nil
 }
