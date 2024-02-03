@@ -12,7 +12,6 @@ import (
 	"github.com/aerex/go-anki/pkg/io"
 	"github.com/aerex/go-anki/pkg/root"
 	"github.com/aerex/go-anki/pkg/template"
-	"github.com/op/go-logging"
 	"github.com/spf13/viper"
 	"gopkg.in/AlecAivazis/survey.v1"
 
@@ -54,23 +53,17 @@ func main() {
 			os.Exit(1)
 		}
 	}
-
-	anki.Api = api.NewApi(&cfg)
 	anki.Config = &cfg
 	anki.Templates = template.NewTemplate(&cfg)
 	anki.Editor = editor.NewModelEditor(anki.Templates, io.NewSystemIO())
 
-	if err := logger.ConfigureLogger(anki, "ankicli"); err != nil {
+	log, err := logger.ConfigureLogger(anki)
+	if err != nil {
 		fmt.Println(err)
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
-	if anki.IO.Log != nil {
-		defer anki.IO.Log.Close()
-	}
-	var log = logging.MustGetLogger("ankicli")
-	// Store ref to global logger
-	anki.Log = log
+	anki.Api = api.NewApi(&cfg, log)
 
 	// Run anki-cli
 	var root = root.NewRootCmd(anki)

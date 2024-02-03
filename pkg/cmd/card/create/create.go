@@ -1,17 +1,16 @@
 package create
 
 import (
+	"fmt"
 	"strings"
 
 	survey "github.com/AlecAivazis/survey/v2"
 	"github.com/aerex/go-anki/pkg/anki"
 	"github.com/aerex/go-anki/pkg/models"
 	"github.com/aerex/go-anki/pkg/ui/prompt"
-	"github.com/op/go-logging"
+	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
 )
-
-var logger = logging.MustGetLogger("ankicli")
 
 type CreateOptions struct {
 	Type     string
@@ -27,7 +26,7 @@ func NewCreateCmd(anki *anki.Anki) *cobra.Command {
 	opts := &CreateOptions{}
 
 	cmd := &cobra.Command{
-		Use:                   "create [-t type] [-f field1 -f field2...] [-d deck]",
+		Use:                   "create [-T type] [-f field1 -f field2...] [-d deck]",
 		DisableFlagsInUseLine: true, // disables [flags] in usage text
 		Short:                 "Create a card",
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -143,11 +142,9 @@ func createCmd(anki *anki.Anki, opts *CreateOptions) (err error) {
 			note.StringTags = strings.Join(selectedTags, ",")
 		}
 	}
-
-	// TODO: Figure out what to do with output card,
 	_, err = anki.Api.CreateCard(note, noteType, deckName)
 	if err != nil {
-		logger.Error(err)
+		log.Logger.Error().Err(err)
 		return err
 	}
 	return nil
