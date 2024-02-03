@@ -46,7 +46,7 @@ func listCmd(anki *anki.Anki, opts *ListOptions) error {
 		query = opts.Query
 	}
 
-	decks, err := anki.Api.Decks(query, false)
+	decks, err := anki.Api.Decks(query)
 	if err != nil {
 		return err
 	}

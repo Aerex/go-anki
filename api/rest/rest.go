@@ -212,7 +212,7 @@ func (a RestApi) UpdateDeckConfig(deckConfig models.DeckConfig, id string) (mode
 	return models.DeckConfig{}, errors.New("could not update deck config")
 }
 
-func (a RestApi) GetCards(qs string, limit int) ([]models.Card, error) {
+func (a RestApi) Cards(qs string, limit int) ([]models.Card, error) {
 	if a.Config.API.Endpoint != "" {
 		cards := &[]models.Card{}
 		req := a.Client.R()

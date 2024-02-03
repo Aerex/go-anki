@@ -2,7 +2,7 @@
 {{- $len := (.Data | len) }} 
 {{/* Deck List Table */}}
 {{- table -}}
-{{- headers "Name" "Leahrning" "Review" "New" -}} {{- range $index := loop $len -}}
+{{- headers "Name" "Learning" "Review" "New" -}} {{- range $index := loop $len -}}
 {{- row (index $.Data $index ).Name (index $.Meta $index).Learning (index $.Meta $index).Review (index $.Meta $index).New }}
 {{- end -}}{{- endtable -}}
 

@@ -3,9 +3,9 @@ package root
 import (
 	"github.com/aerex/go-anki/pkg/anki"
 	cardCommand "github.com/aerex/go-anki/pkg/cmd/card"
-	cardTypeCommand "github.com/aerex/go-anki/pkg/cmd/card-type"
 	deckCommand "github.com/aerex/go-anki/pkg/cmd/deck"
 	deckConfigCommand "github.com/aerex/go-anki/pkg/cmd/deck-config"
+	noteTypeCommand "github.com/aerex/go-anki/pkg/cmd/note-type"
 	"github.com/spf13/cobra"
 )
 
@@ -26,7 +26,7 @@ func NewRootCmd(anki *anki.Anki) *cobra.Command {
 	root.AddCommand(deckCommand.NewCmdDeck(anki))
 	root.AddCommand(cardCommand.NewCardCmd(anki))
 	root.AddCommand(deckConfigCommand.NewDeckConfigsCmd(anki, nil))
-	root.AddCommand(cardTypeCommand.NewCardTypeCmd(anki))
+	root.AddCommand(noteTypeCommand.NewNoteTypeCmd(anki))
 
 	return root
 }

@@ -20,6 +20,8 @@ const (
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 . Api
 // Method definitions for interacting with the anki api
 type Api interface {
+	// Deck returns an existing deck
+	Deck(name string) (deck models.Deck, err error)
 	// DeckStudyStats provides stats for the number of new/reviewed/learning cards per deck
 	DeckStudyStats() (stats map[models.ID]models.DeckStudyStats, err error)
 	// Get list of decks from a collection and filter list if query string is provided
@@ -38,8 +40,8 @@ type Api interface {
 	RenameDeck(nameOrId string, newName string) error
 	// Create a deck
 	CreateDeck(name string) error
-	// Get multiple cards
-	GetCards(qs string, limit int) ([]models.Card, error)
+	// Get multiple cards. To return all cards pass -1 for the limit
+	Cards(qs string, limit int) ([]models.Card, error)
 	// Get a deck study option
 	GetDeckConfig(name string) (models.DeckConfig, error)
 	// Get multiple deck study options

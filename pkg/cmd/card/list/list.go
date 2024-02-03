@@ -29,7 +29,7 @@ func NewListCmd(anki *anki.Anki) *cobra.Command {
 	opts := &ListOptions{}
 
 	cmd := &cobra.Command{
-		Use:   "list [-q quiet] [-t template]",
+		Use:   "list [-q, --query] [-t, --template] [-l, --limit]",
 		Short: "List cards",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if opts.Limit < 0 {
@@ -55,12 +55,7 @@ func listCmd(anki *anki.Anki, opts *ListOptions) error {
 		return err
 	}
 
-	var query string
-	if opts.Query != "" {
-		query = opts.Query
-	}
-
-	cards, err := anki.Api.GetCards(query, opts.Limit)
+	cards, err := anki.Api.Cards(opts.Query, opts.Limit)
 	if err != nil {
 		return err
 	}
@@ -70,6 +65,7 @@ func listCmd(anki *anki.Anki, opts *ListOptions) error {
 
 	var QAs []models.CardQA
 
+	// TODO: externalize into  method for produing questio and answer
 	var errCardNums []int
 	var jsonStr strings.Builder
 	p := bluemonday.StrictPolicy()
@@ -160,7 +156,7 @@ func listCmd(anki *anki.Anki, opts *ListOptions) error {
 			})
 
 			// When we see  <hr id=answer> it is assumed that the content afterwards
-			// is the answer so just that for answer format
+			// is the answer so use that for answer format
 			if strings.Contains(afmt, `<hr id=answer>`) {
 				parts := strings.SplitAfter(afmt, "<hr id=answer>")
 				if len(parts) > 1 {

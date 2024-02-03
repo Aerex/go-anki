@@ -120,7 +120,7 @@ func (a SqliteApi) CreateCard(note models.Note, noteType models.NoteType, deckNa
 	return
 }
 
-func (a SqliteApi) GetCards(qs string, limit int) (cards []models.Card, err error) {
+func (a SqliteApi) Cards(qs string, limit int) (cards []models.Card, err error) {
 	cards, err = a.CardService.Find(qs)
 	if limit > 0 && limit < len(cards) {
 		return cards[0:limit], nil

@@ -136,12 +136,13 @@ type NoteFields []string
 // structure for card notes
 type Note struct {
 	// Array of key value pairs of the field name and field value
-	Fields  NoteFields `json:"fields" yaml:"fields" db:"flds"`
-	Flags   int        `json:"flags" yaml:"flags"`
-	GUID    string     `json:"guid" yaml:"guid" db:"guid"`
-	ID      ID         `json:"id" yaml:"id" db:"id"`
-	ModelID ID         `json:"mid" yaml:"mid" db:"mid"`
-	Mod     UnixTime   `json:"mod" yaml:"mod" db:"mod"`
+	Fields NoteFields `json:"fields" yaml:"fields" db:"flds"`
+	Flags  int        `json:"flags" yaml:"flags"`
+	// the globally unique id for the card note, used in syncing
+	GUID    string   `json:"guid" yaml:"guid" db:"guid"`
+	ID      ID       `json:"id" yaml:"id" db:"id"`
+	ModelID ID       `json:"mid" yaml:"mid" db:"mid"`
+	Mod     UnixTime `json:"mod" yaml:"mod" db:"mod"`
 	// model describes the note type
 	Model     NoteType `json:"model" yaml:"model"`
 	LatexPost string

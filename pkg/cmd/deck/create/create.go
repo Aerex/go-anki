@@ -15,7 +15,7 @@ func NewCreateCmd(anki *anki.Anki, cb func(*anki.Anki) error) *cobra.Command {
 	opts := &CreateDeckOptions{}
 
 	cmd := &cobra.Command{
-		Use:          "create [deck_name]",
+		Use:          "create <name>",
 		Short:        "Create a deck",
 		Args:         cobra.ExactArgs(1),
 		SilenceUsage: true,
@@ -26,19 +26,16 @@ func NewCreateCmd(anki *anki.Anki, cb func(*anki.Anki) error) *cobra.Command {
 			return createCmd(anki, args, opts)
 		},
 	}
-	cmd.Flags().StringVarP(&opts.Type, "type", "t", "Basic", "The type of deck")
-
 	return cmd
 }
 
 func createCmd(anki *anki.Anki, args []string, opts *CreateDeckOptions) error {
-	deck, err := anki.Api.CreateDeck(args[0], opts.Type)
-	if err != nil {
+	if err := anki.Api.CreateDeck(args[0]); err != nil {
 		return err
 	}
 
 	var buffer bytes.Buffer
-	buffer.WriteString("Created deck " + deck.Name)
+	buffer.WriteString("Created deck " + args[0])
 	buffer.WriteTo(anki.IO.Output)
 
 	return nil
