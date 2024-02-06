@@ -10,8 +10,8 @@ import (
 
 type TemplateParseOptions struct {
 	IsAnswer         bool
-	CardTemplateName string
 	CardTemplate     models.CardTemplate
+  CardTemplateName string
 	Card             models.Card
 	ReadStruct       dynamicstruct.Reader
 	FieldMap         map[string]string
@@ -84,3 +84,4 @@ func ParseCardTemplate(opts TemplateParseOptions) (string, error) {
 
 	return output.String(), nil
 }
+
