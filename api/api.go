@@ -20,8 +20,6 @@ const (
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 . Api
 // Method definitions for interacting with the anki api
 type Api interface {
-	// Deck returns an existing deck
-	Deck(name string) (deck models.Deck, err error)
 	// DeckStudyStats provides stats for the number of new/reviewed/learning cards per deck
 	DeckStudyStats() (stats map[models.ID]models.DeckStudyStats, err error)
 	// Get list of decks from a collection and filter list if query string is provided

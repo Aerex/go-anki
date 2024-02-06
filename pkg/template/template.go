@@ -27,7 +27,7 @@ const (
 	MULTIPLE_OPTIONS_LIST   = "deck-options-list"
 	CARD_LIST               = "card-list"
 	CREATE_CARD             = "create-card"
-	LIST_CARD_TYPES         = "list-card-types"
+	LIST_NOTE_TYPES         = "list-note-types"
 )
 
 //go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 . Template
