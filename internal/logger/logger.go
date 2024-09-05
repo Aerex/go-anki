@@ -25,6 +25,8 @@ func ConfigureLogger(anki *anki.Anki) (*zerolog.Logger, error) {
 			return nil, err
 		}
 
+    zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
+
 		logger = zerolog.New(zerolog.ConsoleWriter{
 			Out:        f,
 			NoColor:    true,
@@ -54,6 +56,10 @@ func ConfigureLogger(anki *anki.Anki) (*zerolog.Logger, error) {
 	default:
 		zerolog.SetGlobalLevel(zerolog.InfoLevel)
 	}
+
+  format := viper.GetString("logger.format")
+  if format != "" {
+  }
 	// Save ref to file buffer
 	return &logger, nil
 }

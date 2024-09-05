@@ -63,7 +63,8 @@ func main() {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
-	anki.Api = api.NewApi(&cfg, log)
+	anki.API = api.NewApi(&cfg, log)
+  anki.Log = log
 
 	// Run anki-cli
 	var root = root.NewRootCmd(anki)

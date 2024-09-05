@@ -6,14 +6,14 @@ import (
 	"github.com/aerex/go-anki/pkg/editor"
 	"github.com/aerex/go-anki/pkg/io"
 	"github.com/aerex/go-anki/pkg/template"
-	"github.com/op/go-logging"
+	"github.com/rs/zerolog"
 )
 
 type Anki struct {
-	Api       api.Api
+	API       api.Api
 	IO        *io.IO
 	Config    *config.Config
 	Templates template.Template
-	Log       *logging.Logger
+	Log       *zerolog.Logger
 	Editor    editor.Editor
 }
