@@ -32,22 +32,36 @@ func RenderCard(config *config.Config, card models.Card, cardTmpl models.CardTem
 
 	var questionBuffer bytes.Buffer
 	tmplParseOpts.IsAnswer = false
-	if err := templateFromCard(config, tmplParseOpts, &questionBuffer); err != nil {
+	err := templateFromCard(config, tmplParseOpts, &questionBuffer)
+	if err != nil {
 		return models.CardQA{}, err
 	}
 
-	var answerBuffer bytes.Buffer
+	var (
+		answerQuestionBuffer bytes.Buffer
+		answerOnly           string
+	)
 	tmplParseOpts.IsAnswer = true
-	if err := templateFromCard(config, tmplParseOpts, &answerBuffer); err != nil {
+	err = templateFromCard(config, tmplParseOpts, &answerQuestionBuffer)
+	if err != nil {
 		return models.CardQA{}, err
+	}
+
+	// When we see  <hr id=answer> it is assumed that the content afterwards
+	// is the answer so use that for answer format
+	if strings.Contains(answerQuestionBuffer.String(), "<hr id=answer>") {
+		parts := strings.SplitAfter(answerQuestionBuffer.String(), "<hr id=answer>")
+		if len(parts) > 1 {
+			answerOnly = parts[1]
+		}
 	}
 
 	return models.CardQA{
-		CardType: card.Note.Model.Name,
-		Deck:     card.Deck.Name,
-		Due:      card.Due,
-		Question: strings.TrimSpace(html.UnescapeString(ParsePolicy.Sanitize(questionBuffer.String()))),
-		Answer:   strings.TrimSpace(html.UnescapeString(ParsePolicy.Sanitize(answerBuffer.String()))),
+		Card:            card,
+		Question:        strings.TrimSpace(html.UnescapeString(ParsePolicy.Sanitize(questionBuffer.String()))),
+		QuestionBrowser: questionBuffer.String(),
+		Answer:          strings.TrimSpace(html.UnescapeString(ParsePolicy.Sanitize(answerOnly))),
+		AnswerBrowser:   answerQuestionBuffer.String(),
 	}, nil
 }
 
@@ -63,7 +77,7 @@ func generateCardStruct(card models.Card) (dynamicstruct.Reader, map[string]stri
 		fieldName := fmt.Sprintf("Field_%d", idx)
 		fieldMap[name] = fieldName
 		fieldStruct.AddField(fieldName, "", `json:"`+fieldName+`"`)
-		fmt.Fprintf(&jsonStr, `"%s": "%s"`, fieldName, ParsePolicy.Sanitize(strings.ReplaceAll(value, "\"", "\\\"")))
+		fmt.Fprintf(&jsonStr, `"%s": "%s"`, fieldName, html.UnescapeString(ParsePolicy.Sanitize(strings.ReplaceAll(value, "\"", "\\\""))))
 		if idx < len(card.Note.Fields)-1 {
 			jsonStr.WriteString(",")
 		}
@@ -81,22 +95,14 @@ func templateFromCard(config *config.Config, opts TemplateParseOptions, tmplOut 
 		return err
 	}
 
-	// When we see  <hr id=answer> it is assumed that the content afterwards
-	// is the answer so use that for answer format
-	if opts.IsAnswer && strings.Contains(tmplFmt, "<hr id=answer>") {
-		parts := strings.SplitAfter(tmplFmt, "<hr id=answer>")
-		if len(parts) > 1 {
-			tmplFmt = parts[1]
-		}
-	}
 	t, err := LoadString(tmplFmt, config, RENDER_LIST)
 	if err != nil {
 		return err
 	}
-  if err :=  t.Execute(tmplOut, opts.ReadStruct.GetValue()); err != nil {
-    return fmt.Errorf("Could not generate card from template: %s", tmplFmt)
-  }
-  return nil
+	if err := t.Execute(tmplOut, opts.ReadStruct.GetValue()); err != nil {
+		return fmt.Errorf("Could not generate card from template: %s", tmplFmt)
+	}
+	return nil
 }
 
 func RecoverRender(tmpl models.CardTemplate, cardNum int) {
