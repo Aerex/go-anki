@@ -34,6 +34,7 @@ type DeckRepo interface {
 	Confs() (deckConfs models.DeckConfigs, err error)
 	Parents(deckID models.ID) (decks []models.Deck, err error)
 	FixDecks(decks models.Decks, usn int) error
+	DeckWithParents(deckID models.ID) ([]models.Deck, error)
 }
 
 func NewDeckRepository(conn *sqlx.DB) DeckRepo {
@@ -91,11 +92,11 @@ func (d deckRepo) Decks() (decks models.Decks, err error) {
 	return
 }
 
-func (d deckRepo) Conf(deckId models.ID) (deckConf models.DeckConfig, err error) {
+func (d deckRepo) Conf(deckID models.ID) (deckConf models.DeckConfig, err error) {
 	var deckConfs models.DeckConfigs
 	deckConfs, err = d.Confs()
 
-	deckConf = *deckConfs[deckId]
+	deckConf = *deckConfs[deckID]
 
 	return
 }
@@ -165,6 +166,23 @@ func (d deckRepo) Parents(deckID models.ID) (decks []models.Deck, err error) {
 		decks = append(decks, deck)
 	}
 	return
+}
+
+func (d deckRepo) DeckWithParents(deckID models.ID) ([]models.Deck, error) {
+	allDecks, err := d.Decks()
+	if err != nil {
+		return []models.Deck{}, err
+	}
+	deck, found := allDecks[deckID]
+	if !found {
+		return []models.Deck{}, fmt.Errorf("could not find deck %d", deckID)
+	}
+	decks, pErr := d.Parents(deckID)
+	if pErr != nil {
+		return []models.Deck{}, pErr
+	}
+	return append(decks, *deck), nil
+
 }
 
 func (d deckRepo) ensureParentsExist(immediateParents string, usn int) (string, error) {
