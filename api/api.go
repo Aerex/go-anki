@@ -55,6 +55,8 @@ type Api interface {
 	CreateCard(note models.Note, model models.NoteType, deckName string) (models.Card, error)
 	// Tags returns a list of tags cached in the collection
 	Tags() ([]string, error)
+	// StudyReview will create a study session for a given set of cards
+	StudyReview(log *zerolog.Logger, deckName string, cardQAs []*models.CardQA, stats models.DeckStudyStats) error
 }
 
 type ApiConfig struct {

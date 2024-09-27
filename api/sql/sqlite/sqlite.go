@@ -6,6 +6,7 @@ import (
 
 	repos "github.com/aerex/go-anki/api/sql/sqlite/repositories"
 	"github.com/aerex/go-anki/pkg/models"
+	"github.com/aerex/go-anki/pkg/ui/screen"
 	"github.com/rs/zerolog"
 	sqldblogger "github.com/simukti/sqldb-logger"
 
@@ -25,11 +26,11 @@ func init() {
 }
 
 type SqliteApi struct {
-	Config         *config.Config
-	CardService    services.CardService
-	ColService     services.ColService
-	DeckService    services.DeckService
-	SchedV2Service schedv2.SchedV2Service
+	Config       *config.Config
+	CardService  services.CardService
+	ColService   services.ColService
+	DeckService  services.DeckService
+	SchedService schedv2.SchedService
 }
 
 func NewApi(config *config.Config, log *zerolog.Logger) api.Api {
@@ -44,6 +45,7 @@ func NewApi(config *config.Config, log *zerolog.Logger) api.Api {
 	}
 	cardRepo := repos.NewCardRepository(db)
 	colRepo := repos.NewColRepository(db)
+	revRepo := repos.NewRevLogRepository(db)
 	deckRepo := repos.NewDeckRepository(db)
 	noteRepo := repos.NewNoteRepository(db)
 	api.CardService = services.NewCardService(cardRepo, colRepo, deckRepo, noteRepo)
@@ -51,7 +53,7 @@ func NewApi(config *config.Config, log *zerolog.Logger) api.Api {
 	api.DeckService = services.NewDeckService(deckRepo, colRepo)
 	// TODO: Figure out how to handle the server property
 	// @see third parameter in NewSchedService method
-	api.SchedV2Service = schedv2.NewSchedService(colRepo, cardRepo, deckRepo, true)
+	api.SchedService = schedv2.NewSchedV2Service(colRepo, cardRepo, deckRepo, revRepo, noteRepo, true)
 	return api
 }
 
@@ -71,13 +73,12 @@ func (a *SqliteApi) Decks(qs string) ([]*models.Deck, error) {
 }
 
 func (a *SqliteApi) DeckStudyStats() (stats map[models.ID]models.DeckStudyStats, err error) {
-	return a.SchedV2Service.DeckStudyStats()
-	//switch a.Config.SchedulerVersion {
-	//case 2:
-	//	return a.SchedV2Service.DeckStudyStats()
-	//default:
-	//}
-	//return
+	switch a.Config.General.SchedulerVersion {
+	case 2:
+		return a.SchedService.DeckStudyStats()
+	default:
+	}
+	return
 }
 
 // GetStudiedStats implements api.Api
@@ -126,6 +127,10 @@ func (a SqliteApi) Cards(qs string, limit int) (cards []models.Card, err error) 
 		return cards[0:limit], nil
 	}
 	return
+}
+
+func (a SqliteApi) StudyReview(log *zerolog.Logger, deckName string, cardQAs []*models.CardQA, stats models.DeckStudyStats) error {
+	return screen.StudyReview(log, deckName, cardQAs, stats, a.SchedService, a.DeckService, a.ColService)
 }
 
 func (a SqliteApi) CreateDeck(name string) (err error) {

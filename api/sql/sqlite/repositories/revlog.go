@@ -1,6 +1,9 @@
 package repositories
 
 import (
+	"time"
+
+	ankisql "github.com/aerex/go-anki/api/sql"
 	"github.com/aerex/go-anki/pkg/models"
 	"github.com/jmoiron/sqlx"
 )
@@ -8,16 +11,20 @@ import (
 type RevLogRepo interface {
 	TodayStats(dayCutoff int64) (stats models.StudiedToday, err error)
 	MaturedCards(dayCutoff int64) (stats models.MaturedToday, err error)
+	Create(card models.Card, usn int, ease models.Ease, delay int64, lastInterval int64, timeTaken int64, revLogType models.ReviewLogType) (err error)
 }
 
 type revLogRepo struct {
 	Conn *sqlx.DB
-	Tx   *sqlx.Tx
+	Tx   ankisql.TxOpts
 }
 
 func NewRevLogRepository(conn *sqlx.DB) RevLogRepo {
 	return revLogRepo{
 		Conn: conn,
+    Tx: ankisql.TxOpts{
+      DB: conn,
+    },
 	}
 }
 
@@ -45,6 +52,18 @@ func (r revLogRepo) MaturedCards(dayCutoff int64) (stats models.MaturedToday, er
 		return
 	}
 	return
+}
+
+func (r revLogRepo) Create(card models.Card, usn int, ease models.Ease, delay int64, lastInterval int64, timeTaken int64, revLogType models.ReviewLogType) (err error) {
+	return ankisql.Tx(r.Tx, func(tx *sqlx.Tx) error {
+		query := "INSERT into revlog VALUES (?,?,?,?,?,?,?,?,?)"
+		query = r.Conn.Rebind(query)
+		now := time.Now().Unix()
+		if _, err = tx.Exec(query, now, card.ID, usn, int(ease), delay, lastInterval, card.Factor, timeTaken, revLogType); err != nil {
+			return err
+		}
+		return nil
+	})
 }
 
 func cutoff(dayCutoff int64) int64 {

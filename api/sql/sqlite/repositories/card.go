@@ -23,21 +23,32 @@ var RESTORE_QUEUE_SNIPPET = fmt.Sprintf("queue = (CASE WHEN type IN (1, %d) THEN
 	" %d END)"+
 	" ELSE"+
 	" type"+
-	" END)", models.CardQueueRelearning, models.CardQueueRelearning)
+	" END)", models.CardTypeRelearning, models.CardQueueRelearning)
+
+var RESTORE_QUEUE_WHEN_EMPTYING_SNIPPET = fmt.Sprintf("queue = (CASE WHEN queue < 0 THEN queue "+
+	"WHEN type IN (1, %s) THEN "+
+	"(CASE WHEN (CASE WHEN odue THEN odue ELSE due END) > 1000000000 THEN 1 ELSE "+
+	"%s end)", models.CardTypeRelearning, models.CardQueueRelearning) +
+	" ELSE " +
+	"type end)"
 
 type CardRepo interface {
 	List(cls string, args []string) (cards []models.Card, err error)
-	Exists(cardId int64) (err error, exists bool)
+	Exists(cardID int64) (err error, exists bool)
 	Create(card models.Card) (err error)
-	CardsDueForDeck(deckId int64, due int64, limit int) (lrnCnt int64, err error)
-	CardsLearnedForDeck(deckId int64, due int64, today uint32, limit int) (count int, err error)
+	Update(card models.Card) (err error)
+	CardsDueForDeck(deckID int64, due int64, limit int) (lrnCnt int64, err error)
+	CardsLearnedForDeck(deckID int64, due int64, today int64, limit int) (count int, err error)
 	CardsNewForDeck(deckID models.ID, limit int) (count int, err error)
 	CardsReviewForDeck(deckLimit string, reportLimit int, reviewLimit int, today int) (count int, err error)
 	UnburyCards() (err error)
+	BuriedCards(noteID models.ID, cardID models.ID) (cards []models.Card, err error)
+	BuryCards(cardIDs []models.ID, usn int) error
 	RecoverOrphans(deckLimit string) (err error)
 	LearningCount(deckLimit string, lrnCutoff int64) (count int, err error)
 	Revisions(deckLimit string, limit int) (count int, err error)
 	NewCardsCount(deckID models.ID, limit int) (count int, err error)
+	EmptyDyn(limitQuery string, usn int) error
 }
 
 func NewCardRepository(conn *sqlx.DB) CardRepo {
@@ -136,7 +147,7 @@ func (c cardRepo) CardsNewForDeck(deckID models.ID, limit int) (count int, err e
 	return
 }
 
-func (c cardRepo) CardsLearnedForDeck(deckId int64, due int64, today uint32, limit int) (count int, err error) {
+func (c cardRepo) CardsLearnedForDeck(deckId int64, due int64, today int64, limit int) (count int, err error) {
 	query := fmt.Sprintf("SELECT COUNT() FROM (SELECT NULL FROM cards WHERE did = ? AND queue = %d AND due < ? limit ?)", models.CardTypeNew)
 	row := c.Conn.QueryRow(query, deckId, due, limit)
 	err = row.Scan(&count)
@@ -180,7 +191,19 @@ func (c cardRepo) Create(card models.Card) (err error) {
 	return ankisql.Tx(c.Tx, func(tx *sqlx.Tx) error {
 		query := `INSERT OR REPLACE INTO cards (nid, did, ord, mod, usn, type, queue, due, ivl, factor, reps, lapses, left, odue, odid, flags, data) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?, "")`
 		if _, err := tx.Exec(query, card.NoteID, card.DeckID, card.Ord, card.Mod, card.USN, card.Type, card.Queue,
-			card.Due, card.Interval, card.Factor, card.Reps, card.Lapses, card.Left, card.Odue, card.OriginalDeckID, card.Flags); err != nil {
+			card.Due, card.Interval, card.Factor, card.Reps, card.Lapses, card.ReviewsLeft, card.OriginalDue, card.OriginalDeckID, card.Flags); err != nil {
+			return err
+		}
+		return nil
+	})
+}
+
+func (c cardRepo) Update(card models.Card) (err error) {
+	return ankisql.Tx(c.Tx, func(tx *sqlx.Tx) error {
+		query := `UPDATE cards SET mod=?, usn=?, type=?, queue=?, due=?, ivl=?, factor=?, reps=?,
+    lapses=?, left=?, odue=?, odid=?, did=? where id = ?`
+		if _, err := tx.Exec(query, card.Mod, card.USN, card.Type, card.Queue, card.Due, card.Interval, card.Factor,
+			card.Reps, card.Lapses, card.ReviewsLeft, card.OriginalDue, card.OriginalDeckID, card.DeckID, card.ID); err != nil {
 			return err
 		}
 		return nil
@@ -242,4 +265,50 @@ func (c cardRepo) NewCardsCount(deckID models.ID, deckLimit int) (count int, err
 		return
 	}
 	return
+}
+
+func (c cardRepo) BuriedCards(noteID models.ID, cardID models.ID) (cards []models.Card, err error) {
+	query := "SELECT id, queue FROM cards WHERE nid=? and id!=? AND " +
+		"(queue=0 OR (queue=2 AND due <=?))"
+	query = c.Conn.Rebind(query)
+	today := time.Now().Unix()
+	rows, err := c.Conn.Queryx(query, noteID, cardID, today)
+	if err != nil {
+		return
+	}
+
+	for rows.Next() {
+		var card models.Card
+		rows.StructScan(&card)
+		cards = append(cards, card)
+	}
+	err = rows.Err()
+
+	return
+}
+
+func (c cardRepo) EmptyDyn(limitQuery string, usn int) error {
+	return ankisql.Tx(c.Tx, func(tx *sqlx.Tx) error {
+		query := fmt.Sprintf("UPDATE cards SET did = odid, %s, due = (CASE WHEN odue > 0 THEN odue ELSE due END), "+
+			"odue = 0, odid = 0, usn = ? WHERE %s", RESTORE_QUEUE_WHEN_EMPTYING_SNIPPET, limitQuery)
+		query = c.Conn.Rebind(query)
+		if _, err := tx.Exec(query, usn); err != nil {
+			return err
+		}
+		return nil
+	})
+}
+
+func (c cardRepo) BuryCards(cardIDs []models.ID, usn int) error {
+	return ankisql.Tx(c.Tx, func(tx *sqlx.Tx) error {
+		queue := fmt.Sprintf("manual AND %s OR %s", models.CardQueueBuried, models.CardQueueSBuried)
+		query := "UPDATE cards SET queue = ?, mod = ?, usn = ? WHERE id IN " +
+			ankisql.InClauseFromIDs(cardIDs)
+
+		query = c.Conn.Rebind(query)
+		if _, err := tx.Exec(query, queue, time.Now().Unix(), usn); err != nil {
+			return err
+		}
+		return nil
+	})
 }

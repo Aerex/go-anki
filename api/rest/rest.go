@@ -265,6 +265,9 @@ func (a RestApi) Tags() ([]string, error) {
 	panic("unimplemented")
 }
 
+func (a RestApi) StudyReview(log *zerolog.Logger, deckName string, cardQAs []*models.CardQA, stats models.DeckStudyStats) error {
+	panic("unimplemented")
+}
 func (a RestApi) NoteTypes() (models.NoteTypes, error) {
 	if a.Config.API.Endpoint != "" {
 		mdls := &models.NoteTypes{}

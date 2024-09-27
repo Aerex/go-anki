@@ -76,11 +76,11 @@ func (d *DeckService) Rename(name, newName string) error {
 }
 
 func (d *DeckService) Confs() (models.DeckConfigs, error) {
-	confs, err := d.deckRepo.Confs()
-	if err != nil {
-		return models.DeckConfigs{}, err
-	}
-	return confs, nil
+	return d.deckRepo.Confs()
+}
+
+func (d *DeckService) Conf(deckID models.ID) (models.DeckConfig, error) {
+	return d.deckRepo.Conf(deckID)
 }
 
 func (d *DeckService) Save(deck *models.Deck) error {

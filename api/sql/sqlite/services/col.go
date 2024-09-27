@@ -46,3 +46,7 @@ func (c *ColService) NoteTypes() (models.NoteTypes, error) {
 func (c *ColService) Tags() ([]string, error) {
 	return c.colRepo.Tags()
 }
+
+func (c *ColService) Conf() (models.CollectionConf, error) {
+	return c.colRepo.Conf()
+}

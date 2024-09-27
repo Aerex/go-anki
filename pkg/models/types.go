@@ -5,9 +5,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"reflect"
 	"strconv"
 	"strings"
 	"time"
+	"unsafe"
 )
 
 type UnixTime int64
@@ -207,4 +209,17 @@ func (f *NoteFields) Scan(src interface{}) error {
 
 func (f NoteFields) Value() (driver.Value, error) {
 	return strings.Join(f, "\x1f"), nil
+}
+
+func (dc *DeckConfig) Get(key string, dflt interface{}) (reflect.Value, error) {
+	s := reflect.ValueOf(dc)
+	val := s.FieldByName(key)
+	if !val.IsValid() {
+		cval := reflect.NewAt(val.Type(), unsafe.Pointer(val.UnsafeAddr())).Elem()
+		if !cval.IsValid() {
+			return reflect.Value{}, fmt.Errorf("could not determine value from %T", dflt)
+		}
+		return cval, nil
+	}
+	return val, nil
 }
