@@ -12,7 +12,8 @@ import (
 	"github.com/spf13/cobra"
 )
 
-type CreateOptions struct {
+type CreateCmd struct {
+	Anki     *anki.Anki
 	Type     string
 	Quiet    bool
 	File     string
@@ -23,37 +24,38 @@ type CreateOptions struct {
 }
 
 func NewCreateCmd(anki *anki.Anki) *cobra.Command {
-	opts := &CreateOptions{}
-
+	run := &CreateCmd{
+		Anki: anki,
+	}
 	cmd := &cobra.Command{
-		Use:                   "create [-T type] [-f field1 -f field2...] [-d deck]",
+		Use:                   "create [--type|-T TYPE] [--field|-f FIELD...] [--deck|-d DECK_NAME] [--file|-F FILE] [--tag|-t TAG...]",
 		DisableFlagsInUseLine: true, // disables [flags] in usage text
 		Short:                 "Create a card",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return createCmd(anki, opts)
+			return run.execute()
 		},
 	}
 
-	cmd.Flags().StringVarP(&opts.Type, "type", "T", "", "The note type")
-	cmd.Flags().StringVarP(&opts.File, "file", "F", "", "Read card content from file. Use \"-\" for stdin")
-	cmd.Flags().StringVarP(&opts.Deck, "deck", "d", "", "The name of the deck the new card will be added to")
-	cmd.Flags().StringSliceVarP(&opts.Tags, "tags", "t", []string{}, "List of tags on note")
-	cmd.Flags().StringToStringVarP(&opts.Fields, "field", "f", map[string]string{}, "Set the card fields")
+	cmd.Flags().StringVarP(&run.Type, "type", "T", "", "The note type")
+	cmd.Flags().StringVarP(&run.File, "file", "F", "", "Read card content from file. Use \"-\" for stdin")
+	cmd.Flags().StringVarP(&run.Deck, "deck", "d", "", "The name of the deck the new card will be added to")
+	cmd.Flags().StringSliceVarP(&run.Tags, "tag", "t", []string{}, "List of tags on note")
+	cmd.Flags().StringToStringVarP(&run.Fields, "field", "f", map[string]string{}, "Set the card fields")
 
 	return cmd
 }
 
-func createCmd(anki *anki.Anki, opts *CreateOptions) (err error) {
+func (cmd *CreateCmd) execute() (err error) {
 	var (
 		cardType string
 		deckName string
 	)
 	note := models.Note{}
-	prompt := prompt.NewSurveyPrompt(*anki.Config)
-	if opts.Type != "" {
-		cardType = opts.Type
+	prompt := prompt.NewSurveyPrompt(*cmd.Anki.Config)
+	if cmd.Type != "" {
+		cardType = cmd.Type
 	} else {
-		noteTypes, err := anki.API.NoteTypes()
+		noteTypes, err := cmd.Anki.API.NoteTypes()
 		if err != nil {
 			return err
 		}
@@ -66,10 +68,10 @@ func createCmd(anki *anki.Anki, opts *CreateOptions) (err error) {
 			return err
 		}
 	}
-	if opts.Deck != "" {
-		deckName = opts.Deck
+	if cmd.Deck != "" {
+		deckName = cmd.Deck
 	} else {
-		decks, err := anki.API.Decks("")
+		decks, err := cmd.Anki.API.Decks("")
 		if err != nil {
 			return err
 		}
@@ -83,18 +85,18 @@ func createCmd(anki *anki.Anki, opts *CreateOptions) (err error) {
 		}
 	}
 
-	noteType, err := anki.API.NoteType(cardType)
-  if err != nil {
-    return err
-  }
+	noteType, err := cmd.Anki.API.NoteType(cardType)
+	if err != nil {
+		return err
+	}
 	noteTypeMap := make(map[string]string)
-	if len(opts.Fields) > 0 {
+	if len(cmd.Fields) > 0 {
 		for _, f := range noteType.Fields {
 			noteTypeMap[f.Name] = f.Name
 		}
 		invalidFields := []string{}
 		fields := []string{}
-		for _, value := range opts.Fields {
+		for _, value := range cmd.Fields {
 			if _, ok := noteTypeMap[value]; ok {
 				fields = append(fields, value)
 			} else {
@@ -126,15 +128,15 @@ func createCmd(anki *anki.Anki, opts *CreateOptions) (err error) {
 			}
 		}
 	}
-	if len(opts.Tags) > 0 {
-		note.StringTags = strings.Join(opts.Tags, ",")
+	if len(cmd.Tags) > 0 {
+		note.StringTags = strings.Join(cmd.Tags, ",")
 	} else {
 		includeTags, err := prompt.Confirm("Add tags?")
 		if err != nil {
 			return err
 		}
 		if includeTags {
-			tags, err := anki.API.Tags()
+			tags, err := cmd.Anki.API.Tags()
 			if err != nil {
 				return err
 			}
@@ -145,7 +147,7 @@ func createCmd(anki *anki.Anki, opts *CreateOptions) (err error) {
 			note.StringTags = strings.Join(selectedTags, ",")
 		}
 	}
-	_, err = anki.API.CreateCard(note, noteType, deckName)
+	_, err = cmd.Anki.API.CreateCard(note, noteType, deckName)
 	if err != nil {
 		log.Logger.Error().Err(err)
 		return err
