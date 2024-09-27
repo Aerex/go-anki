@@ -53,7 +53,7 @@ func createCmd(anki *anki.Anki, opts *CreateOptions) (err error) {
 	if opts.Type != "" {
 		cardType = opts.Type
 	} else {
-		noteTypes, err := anki.Api.NoteTypes()
+		noteTypes, err := anki.API.NoteTypes()
 		if err != nil {
 			return err
 		}
@@ -69,7 +69,7 @@ func createCmd(anki *anki.Anki, opts *CreateOptions) (err error) {
 	if opts.Deck != "" {
 		deckName = opts.Deck
 	} else {
-		decks, err := anki.Api.Decks("")
+		decks, err := anki.API.Decks("")
 		if err != nil {
 			return err
 		}
@@ -83,7 +83,10 @@ func createCmd(anki *anki.Anki, opts *CreateOptions) (err error) {
 		}
 	}
 
-	noteType, err := anki.Api.NoteType(cardType)
+	noteType, err := anki.API.NoteType(cardType)
+  if err != nil {
+    return err
+  }
 	noteTypeMap := make(map[string]string)
 	if len(opts.Fields) > 0 {
 		for _, f := range noteType.Fields {
@@ -131,7 +134,7 @@ func createCmd(anki *anki.Anki, opts *CreateOptions) (err error) {
 			return err
 		}
 		if includeTags {
-			tags, err := anki.Api.Tags()
+			tags, err := anki.API.Tags()
 			if err != nil {
 				return err
 			}
@@ -142,7 +145,7 @@ func createCmd(anki *anki.Anki, opts *CreateOptions) (err error) {
 			note.StringTags = strings.Join(selectedTags, ",")
 		}
 	}
-	_, err = anki.Api.CreateCard(note, noteType, deckName)
+	_, err = anki.API.CreateCard(note, noteType, deckName)
 	if err != nil {
 		log.Logger.Error().Err(err)
 		return err

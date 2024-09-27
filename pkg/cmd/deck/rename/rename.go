@@ -34,7 +34,7 @@ func NewRenameCmd(anki *anki.Anki, cb func(*anki.Anki) error) *cobra.Command {
 
 func renameCmd(anki *anki.Anki, opts *RenameOptions, args []string) error {
 
-	err := anki.Api.RenameDeck(args[0], args[1])
+	err := anki.API.RenameDeck(args[0], args[1])
 	if err != nil {
 		return err
 	}

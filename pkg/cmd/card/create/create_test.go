@@ -49,13 +49,13 @@ func TestProcessSuccess(t *testing.T) {
 func executeCreateCommand(t *testing.T, cfg *config.Config, buffers *helpers.TestCmdBuffers, args []string, mockHttp func(), mockExecCtx io.ExecContext) error {
 
 	anki := &anki.Anki{
-		Api:       api.NewApi(cfg),
+		API:       api.NewApi(cfg),
 		Config:    cfg,
 		IO:        io.NewTestIO(buffers.InBuf, buffers.OutBuf, buffers.ErrBuf, mockExecCtx),
 		Templates: template.NewTemplate(cfg),
 	}
 
-	client := anki.Api.GetClient()
+	client := anki.API.GetClient()
 	httpmock.ActivateNonDefault(client)
 
 	mockHttp()
@@ -142,7 +142,7 @@ func TestCreateCardSQL(t *testing.T) {
 		ErrBuf: &bytes.Buffer{},
 	}
 	anki := &anki.Anki{
-		Api:       &fakeApi,
+		API:       &fakeApi,
 		Config:    &cfg,
 		IO:        io.NewTestIO(testBufs.InBuf, testBufs.OutBuf, testBufs.ErrBuf, exec.Command),
 		Templates: &fakeTemplate,

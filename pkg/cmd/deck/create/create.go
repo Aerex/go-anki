@@ -30,7 +30,7 @@ func NewCreateCmd(anki *anki.Anki, cb func(*anki.Anki) error) *cobra.Command {
 }
 
 func createCmd(anki *anki.Anki, args []string, opts *CreateDeckOptions) error {
-	if err := anki.Api.CreateDeck(args[0]); err != nil {
+	if err := anki.API.CreateDeck(args[0]); err != nil {
 		return err
 	}
 

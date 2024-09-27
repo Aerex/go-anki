@@ -27,14 +27,14 @@ func executeListCommand(t *testing.T, useHttp bool, cfg *config.Config, buffers 
 
 	fakeApi = apifakes.FakeApi{}
 	anki := &anki.Anki{
-		Api:       &fakeApi,
+		API:       &fakeApi,
 		Config:    cfg,
 		IO:        io.NewTestIO(buffers.InBuf, buffers.OutBuf, buffers.ErrBuf, exec.Command),
 		Templates: template.NewTemplate(cfg),
 	}
 
 	if useHttp {
-		client := anki.Api.GetClient()
+		client := anki.API.GetClient()
 		httpmock.ActivateNonDefault(client)
 		mockHttp()
 	}
@@ -125,7 +125,7 @@ func TestListCardsSQL(t *testing.T) {
 		ErrBuf: &bytes.Buffer{},
 	}
 	anki := &anki.Anki{
-		Api:       &fakeApi,
+		API:       &fakeApi,
 		Config:    &cfg,
 		IO:        io.NewTestIO(testBufs.InBuf, testBufs.OutBuf, testBufs.ErrBuf, exec.Command),
 		Templates: template.NewTemplate(&cfg),

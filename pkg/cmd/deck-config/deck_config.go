@@ -72,7 +72,7 @@ func deckConfigsCmd(anki *anki.Anki, args []string, opts *DeckConfigOptions) err
 		if err := anki.Templates.Load(tmpl); err != nil {
 			return err
 		}
-		options, err := anki.Api.GetDeckConfig(args[0])
+		options, err := anki.API.GetDeckConfig(args[0])
 		if err != nil {
 			return err
 		}
@@ -85,7 +85,7 @@ func deckConfigsCmd(anki *anki.Anki, args []string, opts *DeckConfigOptions) err
 			yaml.Unmarshal(file, &updatedOption)
 
 			// TODO: Plan to print updated deck config into logger
-			_, err = anki.Api.UpdateDeckConfig(updatedOption, "")
+			_, err = anki.API.UpdateDeckConfig(updatedOption, "")
 			if err != nil {
 				return err
 			}

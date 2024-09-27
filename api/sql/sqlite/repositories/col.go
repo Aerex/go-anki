@@ -154,5 +154,4 @@ func (c colRepo) Tags() (tags []string, err error) {
 	tags = maps.Keys(tagCache)
 
 	return
-
 }

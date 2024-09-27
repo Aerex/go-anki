@@ -40,7 +40,7 @@ func listCmd(anki *anki.Anki, opts *ListOptions) error {
 		return err
 	}
 
-	mdls, err := anki.Api.NoteTypes()
+	mdls, err := anki.API.NoteTypes()
 	if err != nil {
 		return err
 	}

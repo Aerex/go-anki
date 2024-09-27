@@ -46,13 +46,13 @@ func generateSingleDeckConfigYamlString(path string) (string, error) {
 func executeDeckConfigsCommand(t *testing.T, cfg *config.Config, buffers *helpers.TestCmdBuffers, args []string, mockHttp func()) error {
 
 	anki := &anki.Anki{
-		Api:       api.NewApi(cfg),
+		API:       api.NewApi(cfg),
 		Config:    cfg,
 		IO:        io.NewTestIO(buffers.InBuf, buffers.OutBuf, buffers.ErrBuf, nil),
 		Templates: template.NewTemplate(cfg),
 	}
 
-	client := anki.Api.GetClient()
+	client := anki.API.GetClient()
 	httpmock.ActivateNonDefault(client)
 
 	mockHttp()

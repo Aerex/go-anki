@@ -46,7 +46,7 @@ func listCmd(anki *anki.Anki, opts *ListOptions) error {
 		return err
 	}
 
-	cards, err := anki.Api.Cards(opts.Query, opts.Limit)
+	cards, err := anki.API.Cards(opts.Query, opts.Limit)
 	if err != nil {
 		return err
 	}
@@ -55,27 +55,27 @@ func listCmd(anki *anki.Anki, opts *ListOptions) error {
 	}
 
 	var (
-    QAs []models.CardQA
-    cardTmpl models.CardTemplate
-  )
-  for idx, card := range cards {
-      if card.Note.Model.Type == models.ClozeCardType {
-        cardTmpl = *card.Note.Model.Templates[0]
-      } else {
-        for _, tmpl := range card.Note.Model.Templates {
-          if tmpl.Ordinal == card.Ord {
-            cardTmpl = *tmpl
-            break
-          }
-        }
-      }
+		QAs      []models.CardQA
+		cardTmpl models.CardTemplate
+	)
+	for idx, card := range cards {
+		if card.Note.Model.Type == models.ClozeCardType {
+			cardTmpl = *card.Note.Model.Templates[0]
+		} else {
+			for _, tmpl := range card.Note.Model.Templates {
+				if tmpl.Ordinal == card.Ord {
+					cardTmpl = *tmpl
+					break
+				}
+			}
+		}
 
-    defer template.RecoverRender(cardTmpl, idx+1)
-    QA, err := template.RenderCard(anki.Config, card, cardTmpl)
-    if err != nil {
-      return err
-    }
-    QAs = append(QAs, QA)
+		defer template.RecoverRender(cardTmpl, idx+1)
+		QA, err := template.RenderCard(anki.Config, card, cardTmpl)
+		if err != nil {
+			return err
+		}
+		QAs = append(QAs, QA)
 	}
 
 	data := struct {
