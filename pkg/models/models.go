@@ -1,11 +1,11 @@
 package models
 
 type CardQA struct {
-	Question string
-	Answer   string
-	CardType string
-	Deck     string
-	Due      UnixTime
+	Question        string
+	QuestionBrowser string
+	Answer          string
+	AnswerBrowser   string
+	Card            Card
 }
 
 // structure for the card fields
@@ -160,19 +160,29 @@ type Note struct {
 
 // structure for cards
 type Card struct {
-	ID             ID       `json:"id" db:"id"`
-	Ord            int      `json:"ord" db:"ord"`
-	Mod            UnixTime `json:"mod" db:"mod"`
-	USN            int      `json:"usn" db:"usn"`
-	Type           CardType `json:"type" db:"type" `
-	Queue          CardQue  `json:"queue" db:"queue"`
-	Due            UnixTime `json:"due" db:"due"`
-	Interval       int      `json:"ivl" db:"ivl"`
-	Factor         int      `json:"factor" db:"factor"`
-	Reps           int      `json:"reps" db:"reps"`
-	Lapses         int      `json:"lapses" db:"lapses"`
-	Left           int      `json:"left" db:"left"`
-	Odue           int      `json:"odue" db:"odue"`
+	ID       ID       `json:"id" db:"id"`
+	Ord      int      `json:"ord" db:"ord"`
+	Mod      UnixTime `json:"mod" db:"mod"`
+	USN      int      `json:"usn" db:"usn"`
+	Type     CardType `json:"type" db:"type" `
+	Queue    CardQue  `json:"queue" db:"queue"`
+	Due      UnixTime `json:"due" db:"due"`
+	Interval int64    `json:"ivl" db:"ivl"`
+	Factor   int64    `json:"factor" db:"factor"`
+	// number of reviews
+	Reps   int `json:"reps" db:"reps"`
+	Lapses int `json:"lapses" db:"lapses"`
+	//  of the form a*1000+b, with:
+	//    a the number of reviews left today
+	//    b the number of review left till graduation
+	//    for example: '2004' means 2 reps left today and 4 reps till graduation
+	//
+	ReviewsLeft int `json:"left" db:"left"`
+	// original due: In filtered decks, it's the original due date that the card had before moving to filtered.
+	// If the card lapsed in scheduler1, then it's the value before the lapse. (This is used when switching to scheduler 2.
+	// At this time, cards in learning becomes due again, with their previous due date)
+	// In any other case it's 0.
+	OriginalDue    UnixTime `json:"odue" db:"odue"`
 	Flags          string   `json:"-"`
 	Data           string   `json:"-"`
 	Question       string   `json:"question" db:"question"`
@@ -183,6 +193,8 @@ type Card struct {
 	OriginalDeckID ID       `json:"odid" db:"odid"`
 	DeckID         ID       `json:"did" db:"did"`
 	Deck           Deck     `json:"deck" db:"deck"`
+	LastInterval   int64
+	TimeStarted    UnixTime
 }
 
 type CreateNote struct {
@@ -199,6 +211,7 @@ const (
 	CardTypeLearning
 	CardTypeReview
 	CardTypeRelearning
+  CardTypeTime
 )
 
 type CardQue int
@@ -284,23 +297,6 @@ type Collection struct {
 	Tags TagCache `json:"tags" db:"tags"`
 }
 
-type NewCardOrder int
-
-const (
-	NewCardDue NewCardOrder = iota
-	NewCardRandom
-)
-
-//type DeckConf struct {
-//	Id  int64 `json:"id"`
-//	New struct {
-//		// In which order new cards must be shown.
-//		// NEW_CARDS_RANDOM = 0 and NEW_CARDS_DUE = 1.
-//		// @see NewCardOrder enum
-//		Order NewCardOrder
-//	}
-//}
-
 // A map of deck configurations with the id as the creation timestamp
 // If it is the default dec the value will be 1
 type DeckConfigs map[ID]*DeckConfig
@@ -309,25 +305,41 @@ type CollectionStats struct {
 	Stats `json:"stats"`
 }
 
-type ReviewType int
+type ReviewLogType int
 
 const (
-	ReviewTypeLearn ReviewType = iota
-	ReviewTypeReview
-	ReviewTypeRelearn
-	ReviewTypeCram
+	ReviewLogTypeLearning ReviewLogType = iota
+	ReviewLogTypeReview
+	ReviewLogTypeRelearn
+	ReviewLogTypeCram
+)
+
+type Ease int
+
+const (
+	ReviewEaseWrong Ease = 1
+	LearnEaseWrong  Ease = 1
+	ReviewEaseHard  Ease = 2
+	LearnEaseOK     Ease = 2
+	ReviewEaseOK    Ease = 3
+	LearnEaseEasy   Ease = 3
+	ReviewEaseEasy  Ease = 4
 )
 
 type ReviewLog struct {
-	ID           ID    `json:"id" db:"id"`
-	CID          ID    `json:"cid" db:"cid"`
-	USN          int   `json:"usn" db:"usn"`
+	ID  ID  `json:"id" db:"id"`
+	CID ID  `json:"cid" db:"cid"`
+	USN int `json:"usn" db:"usn"`
+	// which button you pushed to score your recall.
+	// review:  1(wrong), 2(hard), 3(ok), 4(easy)
+	//  learn/relearn:   1(wrong), 2(ok), 3(easy)
 	Ease         int   `json:"ease" db:"ease"`
-	Interval     int   `json:"ivl" db:"ivl"`
-	LastInterval int   `json:"lastIvl" db:"lastIvl"`
+	Interval     int64 `json:"ivl" db:"ivl"`
+	LastInterval int64 `json:"lastIvl" db:"lastIvl"`
 	Factor       int   `json:"factor" db:"factor"`
-	Time         int64 `json:"time" db:"time"`
-	Type         int
+	Time         int   `json:"time" db:"time"`
+	// 0=learn, 1=review, 2=relearn, 3=cram
+	Type ReviewLogType
 }
 
 type NewCardSpread int
@@ -351,9 +363,10 @@ type CollectionConf struct {
 	CreationOffset int32         `json:"creationOffset"`
 	LocalOffset    int32         `json:"localOffset"`
 	Rollover       int8          `json:"rollover"`
-	LastUnburied   uint32        `json:"lastUnburied"`
+	LastUnburied   int64         `json:"lastUnburied"`
 	ActiveDecks    []ID          `json:"activeDecks"`
 	NewSpread      NewCardSpread `json:"newSpread"`
+	EstimateTimes  BoolVar       `json:"estTimes"`
 }
 
 // Structure for deck
@@ -377,9 +390,11 @@ type Deck struct {
 	BrowserCollapsed bool `json:"browserCollapsed"`
 	// The number of days that have passed between the collection was created and the deck was last updated from today
 	// First number is always 0
-	NewToday     [2]uint32 `json:"newToday" db:"newToday"`
-	ReviewsToday [2]uint32 `json:"revToday" db:"revToday"`
-	LearnToday   [2]uint32 `json:"lrnToday" db:"lrnToday"`
+	NewToday     [2]int64 `json:"newToday" db:"newToday"`
+	ReviewsToday [2]int64 `json:"revToday" db:"revToday"`
+	LearnToday   [2]int64 `json:"lrnToday" db:"lrnToday"`
+  // Two number array used somehow for custom study.
+  TimeToday []int64 `json:"timeToday" db:"timeToday"`
 	// True if deck is dynamic (AKA filtered)
 	Dyn BoolVar `json:"dyn" db:"dyn"`
 	// Id of option group from the deck. 0 if the deck is dynamic
@@ -414,6 +429,54 @@ const (
 	ClozeCardType
 )
 
+type NewDeckConf struct {
+	// Whether to bury cards related to new cards answered
+	Bury *bool `json:"bury,omitempty"`
+	// The list of successive delay between the learning steps of the new cards
+	Delays []int64 `json:"delays"`
+	// The initial ease factor
+	InitialFactor int64 `json:"initialFactor"`
+	// The list of delays according to the button pressed while leaving the learning mode.
+	// Good, easy and unused. In the GUI, the first two elements corresponds to Graduating Interval and Easy interval
+	Ints []int64 `json:"ints"`
+	// In which order new cards must be shown. NEW_CARDS_RANDOM = 0 and NEW_CARDS_DUE = 1.
+	Order OrderType `json:"order"`
+	// Maximal number of new cards shown per day.
+	PerDay   int  `json:"perDay"`
+	Seperate bool `json:"seperate"`
+}
+
+type RevDeckConf struct {
+	// Whether to bury cards related to new cards answered
+	Bury *bool `json:"bury,omitempty"`
+	// The number to add to the easyness when the easy button is pressed
+	Ease4 float64 `json:"ease4"`
+	// The new interval is multiplied by a random number between -fuzz and fuzz
+	Fuzz float64 `json:"fuzz"`
+	// Multiplication factor applied to the intervals Anki generates"
+	IvlFct *int64 `json:"ivlFct,omitempty"`
+	// The maximal interval for review
+	MaxIvl int64 `json:"maxIvl"`
+	// Numbers of cards to review per day
+	PerDay     int      `json:"perDay"`
+	HardFactor *float64 `json:"hardFactor,omitempty"`
+}
+
+type LapseDeckConf struct {
+	// The list of successive delay between the learning steps of the new cards
+	Delays []int64 `json:"delays"`
+	// What to do to leech cards.
+	// Current values: 0 for suspend, 1 for mark.
+	LeechAction LeechActionType `json:"leechAction"`
+	// The number of lapses authorized before doing leechAction.
+	LeechFails int `json:"leechFails"`
+	// A lower limit to the new interval after a leech
+	MinInterval int64 `json:"minInterval"`
+	// Percent by which to multiply the current interval when a card goes has lapsed
+	Mult    int64 `json:"mult"`
+	Resched bool  `json:"resched"`
+}
+
 // structure for deck options
 // See https://github.com/ankidroid/Anki-Android/wiki/Database-Structure#dconf-jsonobjects
 type DeckConfig struct {
@@ -425,68 +488,31 @@ type DeckConfig struct {
 	// The deck's ID
 	DeckId int `json:"deckId"`
 	// The configuration for lapse cards.
-	Lapse struct {
-		// The list of successive delay between the learning steps of the new cards
-		Delays []int `json:"delays"`
-		// What to do to leech cards.
-		// Current values: 0 for suspend, 1 for mark.
-		LeechAction LeechActionType `json:"leechAction"`
-		// The number of lapses authorized before doing leechAction.
-		LeechFails int `json:"leechFails"`
-		// A lower limit to the new interval after a leech
-		MinInterval int `json:"minInterval"`
-		// Percent by which to multiply the current interval when a card goes has lapsed
-		Mult int `json:"mult"`
-	} `json:"lapse"`
+	Lapse LapseDeckConf `json:"lapse"`
 	// The number of seconds after which to stop the timer
-	MaxTaken int `json:"maxTaken"`
+	MaxTaken int64 `json:"maxTaken"`
 	// Last modification time
 	Mod UnixTime `json:"mod"`
 	// The name of the configuration
 	Name string `json:"name"`
 	// The configuration for new cards.
-	New struct {
-		// Whether to bury cards related to new cards answered
-		Bury bool `json:"bury"`
-		// The list of successive delay between the learning steps of the new cards
-		Delays []int `json:"delays"`
-		// The initial ease factor
-		InitialFactor int `json:"initialFactor"`
-		// The list of delays according to the button pressed while leaving the learning mode.
-		// Good, easy and unused. In the GUI, the first two elements corresponds to Graduating Interval and Easy interval
-		LearningDelays []int `json:"learningDelays"`
-		// In which order new cards must be shown. NEW_CARDS_RANDOM = 0 and NEW_CARDS_DUE = 1.
-		Order OrderType `json:"order"`
-		// Maximal number of new cards shown per day.
-		PerDay int `json:"perDay"`
-	} `json:"new"`
+	New NewDeckConf `json:"new"`
 	// Whether the audio associated to a question should be played when the answer is shown
 	Replayq bool `json:"relayq"`
 	// The configuration for review cards.
-	Rev struct {
-		// Whether to bury cards related to new cards answered
-		Bury bool `json:"bury"`
-		// The number to add to the easyness when the easy button is pressed
-		Ease4 float32 `json:"ease4"`
-		// The new interval is multiplied by a random number between -fuzz and fuzz
-		Fuzz float32 `json:"fuzz"`
-		// Multiplication factor applied to the intervals Anki generates"
-		IvlFct int `json:"ivlFct"`
-		// The maximal interval for review
-		MaxIvl int `json:"maxIvl"`
-		// Numbers of cards to review per day
-		PerDay int `json:"perDay"`
-	} `json:"rev"`
+	Rev RevDeckConf `json:"rev"`
 	// Whether timer should be shown
 	Timer BoolVar `json:"timer"`
 	// TODO: I think this should be readonly
 	// Update sequence number used to figure out diffs when syncing.
 	// value of -1 indicates changes that need to be pushed to server.
 	// usn < server usn indicates changes that need to be pulled from server.
-	USN int `json:"usn"`
+	USN          int       `json:"usn"`
+	Resched      bool      `db:"resched"`
+	PreviewDelay *UnixTime `db:"previewDelay"`
 }
 
 type SchedTimingToday struct {
-	DaysElapsed uint32
+	DaysElapsed int64
 	NextDayAt   int64
 }
