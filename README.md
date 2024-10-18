@@ -16,6 +16,8 @@
 
 `go-anki` is a command line client for managing and studying flash cards on Anki.
 
+# WARNING: `go-anki` is in early alpha phase. Some features are still not working properly
+
 
 [Installation](#installation) •
 [Overview](#overview) •
@@ -69,6 +71,7 @@ anki card create --deck Grammar
 
 ## Roadmap
 - [ ] Add translation
+- [ ] Add ability to study a deck
 
 ## Contributing
 
