@@ -14,6 +14,7 @@ import (
 var logger zerolog.Logger
 
 func ConfigureLogger(anki *anki.Anki) (*zerolog.Logger, error) {
+  zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
 	if anki.Config.Logger.File != "" {
 		path, err := homedir.Expand(anki.Config.Logger.File)
 		if err != nil {
@@ -25,7 +26,6 @@ func ConfigureLogger(anki *anki.Anki) (*zerolog.Logger, error) {
 			return nil, err
 		}
 
-    zerolog.TimeFieldFormat = zerolog.TimeFormatUnix
 
 		logger = zerolog.New(zerolog.ConsoleWriter{
 			Out:        f,
@@ -34,9 +34,13 @@ func ConfigureLogger(anki *anki.Anki) (*zerolog.Logger, error) {
 		})
 	} else {
 		logger = zerolog.New(zerolog.ConsoleWriter{
+      TimeFormat: time.RFC3339,
 			Out: anki.IO.Error,
 		})
 	}
+
+  // include timestamp
+  logger = logger.With().Timestamp().Logger()
 
 	level := strings.ToUpper(viper.GetString("logger.level"))
 	switch level {
@@ -53,13 +57,15 @@ func ConfigureLogger(anki *anki.Anki) (*zerolog.Logger, error) {
 		zerolog.SetGlobalLevel(zerolog.ErrorLevel)
 	case "FATAL":
 		zerolog.SetGlobalLevel(zerolog.FatalLevel)
+	case "OFF":
+		zerolog.SetGlobalLevel(zerolog.Disabled)
 	default:
-		zerolog.SetGlobalLevel(zerolog.InfoLevel)
+		zerolog.SetGlobalLevel(zerolog.DebugLevel)
 	}
 
-  format := viper.GetString("logger.format")
-  if format != "" {
-  }
+	format := viper.GetString("logger.format")
+	if format != "" {
+	}
 	// Save ref to file buffer
 	return &logger, nil
 }
