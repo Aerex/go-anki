@@ -12,6 +12,7 @@ import (
 	"github.com/aerex/go-anki/pkg/io"
 	"github.com/mitchellh/go-homedir"
 	"github.com/pelletier/go-toml"
+	"github.com/rs/zerolog"
 	"github.com/spf13/viper"
 )
 
@@ -26,9 +27,8 @@ const (
 )
 
 type Logger struct {
-	Level  string `toml:"level"`
-	File   string `toml:"file"`
-	Format string `toml:"format"`
+  Level  string `toml:"level" comment:"The log level verbosity. Default is DEBUG. Available levels: TRACE, DEBUG, INFO, WARN, ERROR, FATAL, OFF"`
+  File   string `toml:"file" comment:"The file path where the logs will be stored"`
 	Sql    bool   `toml:"sql" comment:"Enable to log SQL statements"`
 }
 
@@ -37,12 +37,12 @@ type Prompt struct {
 }
 
 type Color struct {
-	Hint string `toml:"hint"`
+  Hint string `toml:"hint" comment:"The color to use for hints in cloze"`
 }
 
 type API struct {
 	User     string `toml:"user"`
-	PassEval string `toml:"pass-cmd,inline"`
+  PassEval string `toml:"pass-cmd,inline" comment:"Run a command to retrieve the password"`
 	Pass     string `toml:"pass,omitempty"`
 	// The URL to retrieve data from backend.
 	Endpoint string `toml:"endpoint" comment:"URL to retrieve data from backend"`
@@ -50,11 +50,11 @@ type API struct {
 
 type General struct {
 	// Options are `REST` and `DB`
-	Type string `mapstructure:"type" comment:"Options are REST and DB"`
+  Type string `toml:"type" mapstructure:"type" comment:"Options are REST and DB"`
 	// SchedulerVersion sets the the scheduler version to use when syncing. Options are 2 or 3
 	// @see https://faqs.ankiweb.net/the-anki-2.1-scheduler.html and https://faqs.ankiweb.net/the-2021-scheduler.html
 	// for information on compatibility
-	SchedulerVersion int `mapstructure:"sched" comment:"Sets the scheduler version to use when syncing. Options are 2 or 3"`
+	SchedulerVersion int `toml:"sched" mapstructure:"sched" comment:"Sets the scheduler version to use when syncing. Options are 2 or 3"`
 	// The path of for the editor that will be launched when editing content (ie: vim or notepad)
 	// Default will use the editor set by the EDITOR or ANKICLI_EDITOR environment variable
 	Editor string `toml:"editor" comment:"The path of for the editor that will be launched when editing content (ie: vim or notepad)"`
@@ -62,7 +62,7 @@ type General struct {
 
 type DB struct {
 	// the database driver (ie: sqlite3)
-	Driver string `toml:"driver" comment:"the database driver (ie: sqlite3)"`
+  Driver string `toml:"driver" comment:"the database driver: Options are sqlite3"`
 	// location of database file
 	File string `toml:"file" comment:"location of database file"`
 }
@@ -74,8 +74,8 @@ type Config struct {
 	API     API     `toml:"api"`
 	General General `toml:"general"`
 	Color   Color   `toml:"color,omitempty"`
-	Dir     string
-	Prompt  Prompt `toml:"prompt"`
+	Dir     string  `toml:"dir,omitempty"`
+	Prompt  Prompt  `toml:"prompt"`
 }
 
 func init() {
@@ -191,16 +191,21 @@ func GenerateSampleConfig(config *Config, io *io.IO) (string, error) {
 	userConfig, _ := GetUserConfig()
 	configDir := filepath.Join(userConfig, "anki-cli")
 	if _, err := os.Stat(configDir); os.IsNotExist(err) {
-		os.Mkdir(configDir, 0700)
+		if err := os.Mkdir(configDir, 0700); err != nil {
+			return "", err
+		}
 	}
+
+	config.General.SchedulerVersion = 2
+  config.Logger.Level = strings.ToUpper(zerolog.DebugLevel.String())
 
 	out, err := toml.Marshal(config)
 	if err != nil {
 		return "", err
 	}
 
-	configFilePath := filepath.Join(configDir, "config")
-	err = os.WriteFile(configFilePath, out, 0700)
+	configFilePath := filepath.Join(configDir, "config.toml")
+	err = os.WriteFile(configFilePath, out, 0600)
 	if err != nil {
 		return "", err
 	}
