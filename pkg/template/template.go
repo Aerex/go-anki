@@ -5,6 +5,7 @@ package template
 import (
 	"encoding/json"
 	"fmt"
+	"io/fs"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -59,11 +60,38 @@ func LoadString(tmpl string, config *config.Config, renderType string) (*templat
 	return t, nil
 }
 
-// Return the full path of the sample template directory
-func GetSampleTemplateFilePath(fileName string) string {
+// sampleTemplateFilePath will return the full path of a template file in the sample template directory
+func sampleTemplateFilePath(fileName string) string {
+	return filepath.Join(sampleTemplateDirPath(), fileName)
+}
+
+func CopyTemplates(destDir string) error {
+	templateDir := sampleTemplateDirPath()
+	tree := os.DirFS(templateDir)
+	items, dirErr := fs.ReadDir(tree, ".")
+	if dirErr != nil {
+		return dirErr
+	}
+
+	for _, item := range items {
+		if item.Type().IsRegular() {
+			out, readErr := os.ReadFile(filepath.Join(templateDir, item.Name()))
+			if readErr != nil {
+				return readErr
+			}
+			if err := os.WriteFile(filepath.Join(destDir, item.Name()), out, 0600); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+// sampleTemplateDirPath will return the full path of the sample template directory
+func sampleTemplateDirPath() string {
 	_, moduleFileName, _, _ := runtime.Caller(0)
 	moduleDir := filepath.Join(filepath.Dir(moduleFileName))
-	return filepath.Join(moduleDir, "../../configs/templates", fileName)
+	return filepath.Join(moduleDir, "../../configs/templates")
 }
 
 // Read template file and return the contents
@@ -103,16 +131,17 @@ func (t *AnkiTemplate) Load(pathname string) error {
 			useDefault := false
 			// Confirm with user that default template will be used.
 			// Ask if cli should copy over sample template file
-			survey.AskOne(
+			if err := survey.AskOne(
 				&survey.Confirm{
-					Message: "Could not find template file. Would you like to use the default file?",
-					Help:    "You can run anki templates generate to copy sample template files to your anki-cli config directory",
-				}, &useDefault, nil)
+					Message: fmt.Sprintf("Could not find template file (`%s`). Would you like to use the default file?", pathname),
+				}, &useDefault, nil); err != nil {
+				return err
+			}
 
 			if useDefault {
 				// If we get to this point we can assume pathname is a fileName
 				// since  we could not find template override provided by the user
-				data, err = t.GetTemplateFile(GetSampleTemplateFilePath(pathname))
+				data, err = t.GetTemplateFile(sampleTemplateFilePath(pathname))
 				if err != nil {
 					return err
 				}

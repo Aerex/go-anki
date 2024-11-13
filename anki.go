@@ -14,6 +14,7 @@ import (
 	"github.com/aerex/go-anki/pkg/template"
 	"github.com/spf13/viper"
 	"gopkg.in/AlecAivazis/survey.v1"
+	"path/filepath"
 
 	// Preload all api types
 	_ "github.com/aerex/go-anki/api/types"
@@ -31,7 +32,7 @@ func main() {
 	if err := config.Load("", &cfg, anki.IO); err != nil {
 		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
 			// If we could not find the config ask the user if we can copy over the sample
-			createConfigFile := false
+			var createConfigFile bool
 			survey.AskOne(
 				&survey.Confirm{
 					Message: "A configuration file could not be found. Would you like a sample configuration created for you?",
@@ -53,6 +54,29 @@ func main() {
 			os.Exit(1)
 		}
 	}
+	templateDir := filepath.Join(cfg.Dir, "templates")
+	if _, err := os.Stat(templateDir); os.IsNotExist(err) {
+		var createTemplates bool
+    err := survey.AskOne(
+			&survey.Confirm{
+				Message: "The template directory could not be found in your configuration folder (`" + templateDir +"`). Would you like to copy over the sample templates?",
+			}, &createTemplates, nil)
+		if createTemplates {
+			if err := os.Mkdir(templateDir, 0700); err != nil {
+				fmt.Fprintln(os.Stderr, err)
+				os.Exit(1)
+			}
+			if err := template.CopyTemplates(templateDir); err != nil {
+				fmt.Fprintln(os.Stderr, err)
+				os.Exit(1)
+			}
+		}
+    if err != nil {
+      fmt.Fprintln(os.Stderr, err)
+      os.Exit(1)
+    }
+	}
+
 	anki.Config = &cfg
 	anki.Templates = template.NewTemplate(&cfg)
 	anki.Editor = editor.NewModelEditor(anki.Templates, io.NewSystemIO())
